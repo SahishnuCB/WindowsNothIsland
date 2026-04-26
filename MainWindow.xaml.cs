@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using WindowsNothIsland.Services;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
+using System.Windows.Input;
 
 namespace WindowsNothIsland
 {
@@ -17,7 +18,8 @@ namespace WindowsNothIsland
     {
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
-
+        private readonly AudioService _audioService = new();
+        private bool _wasExpanded = false;
         private bool _isExpanded = false;
         private bool _isHovering = false;
         private double _windowStartLeft;
@@ -40,6 +42,11 @@ namespace WindowsNothIsland
         public MainWindow()
         {
             InitializeComponent();
+
+            CollapsedView.Opacity = 1;
+            ExpandedView.Opacity = 0;
+            ClockView.Opacity = 0;
+            ClockExpandedView.Opacity = 0;
 
             Loaded += (s, e) =>
             {
@@ -88,13 +95,14 @@ namespace WindowsNothIsland
                 if (_isHovering)
                 {
                     ClockView.Visibility = Visibility.Collapsed;
-                    ClockExpandedView.Visibility = Visibility.Visible;
+                    ShowWithFade(ClockExpandedView);
                     AnimateIsland(650, 220, 18);
                 }
                 else
                 {
-                    ClockView.Visibility = Visibility.Visible;
                     ClockExpandedView.Visibility = Visibility.Collapsed;
+                    ShowWithFade(ClockView);
+
                     _isExpanded = false;
                     AnimateIsland(280, 74, 18);
                 }
@@ -266,6 +274,25 @@ namespace WindowsNothIsland
             ExpandedView.Background = brush;
         }
 
+        private void FadeTo(UIElement element, double opacity, int durationMs = 180)
+        {
+            var anim = new DoubleAnimation
+            {
+                To = opacity,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            element.BeginAnimation(UIElement.OpacityProperty, anim);
+        }
+
+        private void ShowWithFade(UIElement element)
+        {
+            element.Opacity = 0;
+            element.Visibility = Visibility.Visible;
+            FadeTo(element, 1);
+        }
+
         private void UpdateClock()
         {
             var now = DateTime.Now;
@@ -311,17 +338,14 @@ namespace WindowsNothIsland
             await UpdateMediaInfo();
         }
 
-        private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        private async void Island_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // 👉 HOLD SHIFT = control volume
-            if (System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftShift) ||
-                System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.RightShift))
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
             {
-                await _mediaService.ChangeVolumeAsync(e.Delta > 0 ? 5 : -5);
+                _audioService.ChangeVolume(e.Delta > 0 ? 0.05f : -0.05f);
                 return;
             }
 
-            // 👉 NORMAL SCROLL = switch media source
             if (e.Delta > 0)
                 await _mediaService.NextSessionAsync();
             else
@@ -346,6 +370,17 @@ namespace WindowsNothIsland
 
         private void Island_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            // Don't start dragging if clicking timeline or controls
+            if (e.OriginalSource is FrameworkElement fe)
+            {
+                if (fe.Name == "TimelineCanvas" ||
+                    fe.Name == "ProgressBar" ||
+                    fe.Name == "ProgressDot")
+                {
+                    return;
+                }
+            }
+
             if (e.ClickCount == 2)
             {
                 _isDraggingIsland = false;
@@ -472,7 +507,7 @@ namespace WindowsNothIsland
                 SetIslandBlack();
 
                 ClockView.Visibility = Visibility.Collapsed;
-                ClockExpandedView.Visibility = Visibility.Visible;
+                ShowWithFade(ClockExpandedView);
 
                 AnimateIsland(650, 220, 18);
                 return;
@@ -483,29 +518,32 @@ namespace WindowsNothIsland
             CollapsedView.Visibility = Visibility.Collapsed;
             ExpandedView.Visibility = Visibility.Visible;
 
+            ShowWithFade(ExpandedView);
+
             SetIslandTint();
             AnimateIsland(650, 220, 18);
         }
 
-        private void Island_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        private void Island_MouseLeave(object sender, MouseEventArgs e)
         {
             _isHovering = false;
-
-            if (ClockExpandedView.Visibility == Visibility.Visible)
-            {
-                SetIslandBlack();
-
-                ClockView.Visibility = Visibility.Visible;
-                ClockExpandedView.Visibility = Visibility.Collapsed;
-
-                AnimateIsland(280, 74, 18);
-                return;
-            }
-
             _isExpanded = false;
 
-            CollapsedView.Visibility = Visibility.Visible;
+            // Hide ALL expanded views
             ExpandedView.Visibility = Visibility.Collapsed;
+            ClockExpandedView.Visibility = Visibility.Collapsed;
+
+            // Decide what collapsed view to show
+            bool hasMedia = TitleText.Text != "Nothing playing";
+
+            if (hasMedia)
+            {
+                ShowWithFade(CollapsedView);
+            }
+            else
+            {
+                ShowWithFade(ClockView);
+            }
 
             SetIslandBlack();
             AnimateIsland(280, 74, 18);
@@ -562,18 +600,29 @@ namespace WindowsNothIsland
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             });
 
-            Island.RenderTransformOrigin = new Point(0.5, 0);
-            Island.RenderTransform = new ScaleTransform(1, 1);
-
-            var scaleAnim = new DoubleAnimation
+            // only animate scale when state changes
+            if (_wasExpanded != _isExpanded)
             {
-                To = _isExpanded ? 1.02 : 1.0,
-                Duration = TimeSpan.FromMilliseconds(250),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
+                Island.RenderTransformOrigin = new Point(0.5, 0);
 
-            ((ScaleTransform)Island.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-            ((ScaleTransform)Island.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+                if (Island.RenderTransform is not ScaleTransform scale)
+                {
+                    scale = new ScaleTransform(1, 1);
+                    Island.RenderTransform = scale;
+                }
+
+                var scaleAnim = new DoubleAnimation
+                {
+                    To = _isExpanded ? 1.02 : 1.0,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+
+                _wasExpanded = _isExpanded;
+            }
 
             Island.BeginAnimation(Border.CornerRadiusProperty, new CornerRadiusAnimation
             {

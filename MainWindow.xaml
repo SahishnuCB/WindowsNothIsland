@@ -33,21 +33,28 @@
 
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
+                                VerticalAlignment="Center"
+                                MaxWidth="240">
 
-                        <Image x:Name="AlbumArt"
-                                Width="28"
-                                Height="28"
-                                Stretch="UniformToFill"
-                                Margin="0,0,10,0"/>
+                        <Border Width="32"
+                                Height="32"
+                                CornerRadius="6"
+                                ClipToBounds="True"
+                                Margin="0,0,10,0">
+
+                            <Image x:Name="AlbumArt"
+                                    Stretch="UniformToFill"/>
+                        </Border>
 
                         <TextBlock x:Name="TitleText"
                                     Text="Nothing playing"
                                     Foreground="White"
-                                    FontSize="14"
+                                    FontSize="13"
                                     FontWeight="SemiBold"
                                     VerticalAlignment="Center"
-                                    TextTrimming="CharacterEllipsis"/>
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap"
+                                    Width="160"/>
                     </StackPanel>
                 </Grid>
 
