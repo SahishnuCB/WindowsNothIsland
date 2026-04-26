@@ -96,25 +96,30 @@
                                     Margin="0,2,0,12"/>
 
                         <!-- TIMELINE -->
-                        <Grid Margin="0,0,0,12">
+                        <Canvas Width="320"
+                                Height="10"
+                                Margin="0,0,0,12">
 
-                            <Border Height="3"
+                            <Border Width="320"
+                                    Height="3"
                                     Background="#2C2C2E"
-                                    CornerRadius="2"/>
+                                    CornerRadius="2"
+                                    Canvas.Top="3"/>
 
                             <Border x:Name="ProgressBar"
+                                    Width="0"
                                     Height="3"
-                                    Width="120"
                                     Background="White"
                                     CornerRadius="2"
-                                    HorizontalAlignment="Left"/>
+                                    Canvas.Top="3"/>
 
-                            <Ellipse Width="8"
+                            <Ellipse x:Name="ProgressDot"
+                                        Width="8"
                                         Height="8"
                                         Fill="White"
-                                        HorizontalAlignment="Left"
-                                        Margin="120,-2,0,0"/>
-                        </Grid>
+                                        Canvas.Left="0"
+                                        Canvas.Top="0"/>
+                        </Canvas>
 
                         <!-- CONTROLS -->
                         <StackPanel Orientation="Horizontal">

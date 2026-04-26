@@ -61,6 +61,23 @@ namespace WindowsNothIsland
                 AlbumArt.Source = image;
                 ExpandedAlbumArt.Source = image;
             }
+
+            if (media.Duration.TotalSeconds > 0)
+            {
+                double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
+                ratio = Math.Clamp(ratio, 0, 1);
+
+                double trackWidth = 320;
+                double progressWidth = trackWidth * ratio;
+
+                ProgressBar.Width = progressWidth;
+                Canvas.SetLeft(ProgressDot, progressWidth - 4);
+            }
+            else
+            {
+                ProgressBar.Width = 0;
+                Canvas.SetLeft(ProgressDot, 0);
+            }
         }
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Windows.Media.Control;
 using Windows.Storage.Streams;
@@ -12,6 +11,8 @@ namespace WindowsNothIsland.Services
         public string Artist { get; set; } = "";
         public string SourceApp { get; set; } = "";
         public byte[]? Thumbnail { get; set; }
+        public TimeSpan Position { get; set; } = TimeSpan.Zero;
+        public TimeSpan Duration { get; set; } = TimeSpan.Zero;
     }
 
     public class MediaService
@@ -25,6 +26,7 @@ namespace WindowsNothIsland.Services
                 return new MediaInfo();
 
             var mediaProperties = await session.TryGetMediaPropertiesAsync();
+            var timeline = session.GetTimelineProperties();
 
             byte[]? thumbnailBytes = null;
 
@@ -38,12 +40,16 @@ namespace WindowsNothIsland.Services
                 reader.ReadBytes(thumbnailBytes);
             }
 
+            var duration = timeline.EndTime - timeline.StartTime;
+
             return new MediaInfo
             {
                 Title = mediaProperties.Title,
                 Artist = mediaProperties.Artist,
                 SourceApp = session.SourceAppUserModelId,
-                Thumbnail = thumbnailBytes
+                Thumbnail = thumbnailBytes,
+                Position = timeline.Position,
+                Duration = duration
             };
         }
     }
