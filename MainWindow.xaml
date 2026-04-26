@@ -7,60 +7,126 @@
         Topmost="True"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Width="650"
-        Height="230">
+        Width="750"
+        Height="260">
 
     <Grid>
         <Border x:Name="Island"
                 Background="#0F0F10"
                 Width="260"
-            Height="58"
-            CornerRadius="0,0,18,18"
+                Height="58"
+                CornerRadius="0,0,18,18"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 MouseEnter="Island_MouseEnter"
                 MouseLeave="Island_MouseLeave">
 
-            <Grid Margin="16,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Grid Margin="16,10">
 
-                <!-- Album Art -->
-                <Rectangle Width="34"
+                <!-- COLLAPSED -->
+                <Grid x:Name="CollapsedView">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Image x:Name="AlbumArt"
+                            Width="34"
                             Height="34"
-                            Fill="#2C2C2E"
-                            RadiusX="8"
-                            RadiusY="8"
-                            VerticalAlignment="Center"/>
+                            Stretch="UniformToFill"
+                            Margin="0,0,10,0"/>
 
-                <!-- Text -->
-                <StackPanel Grid.Column="1"
-                            Margin="12,0"
-                            VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center">
 
-                    <TextBlock x:Name="TitleText"
-                                Text="Nothing playing"
-                                Foreground="White"
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="TitleText"
+                                    Text="Nothing playing"
+                                    Foreground="White"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis"/>
 
-                    <TextBlock x:Name="ArtistText"
-                                Text=""
-                                Foreground="#A0A0A0"
-                                FontSize="11"
-                                TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="ArtistText"
+                                    Text=""
+                                    Foreground="#A0A0A0"
+                                    FontSize="11"
+                                    TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="2"
+                                Text="▶"
+                                Foreground="#EAEAEA"
+                                FontSize="18"
+                                VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- EXPANDED -->
+                <StackPanel x:Name="ExpandedView"
+                            Visibility="Collapsed"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Margin="10">
+
+                    <!-- LEFT: BIG ALBUM ART -->
+                    <Image x:Name="ExpandedAlbumArt"
+                            Width="120"
+                            Height="120"
+                            Stretch="UniformToFill"
+                            Margin="0,0,20,0"/>
+
+                    <!-- RIGHT -->
+                    <StackPanel Width="320"
+                                VerticalAlignment="Center">
+
+                        <TextBlock x:Name="ExpandedTitle"
+                                    Text="Song Name"
+                                    Foreground="White"
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis"/>
+
+                        <TextBlock x:Name="ExpandedArtist"
+                                    Text="Artist"
+                                    Foreground="#A0A0A0"
+                                    FontSize="13"
+                                    Margin="0,2,0,12"/>
+
+                        <!-- Timeline -->
+                        <Border Height="4"
+                                Background="#2C2C2E"
+                                CornerRadius="2"
+                                Margin="0,0,0,12">
+                            <Border x:Name="ProgressBar"
+                                    Width="80"
+                                    Background="White"
+                                    CornerRadius="2"/>
+                        </Border>
+
+                        <!-- Controls -->
+                        <StackPanel Orientation="Horizontal">
+
+                            <TextBlock Text="⏮"
+                                        FontSize="20"
+                                        Foreground="White"
+                                        Margin="0,0,15,0"/>
+
+                            <TextBlock Text="⏯"
+                                        FontSize="22"
+                                        Foreground="White"
+                                        Margin="0,0,15,0"/>
+
+                            <TextBlock Text="⏭"
+                                        FontSize="20"
+                                        Foreground="White"/>
+                        </StackPanel>
+
+                    </StackPanel>
+
                 </StackPanel>
 
-                <!-- Play Button -->
-                <TextBlock Grid.Column="2"
-                            Text="▶"
-                            Foreground="#EAEAEA"
-                            FontSize="18"
-                            VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>
