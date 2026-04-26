@@ -172,6 +172,19 @@ namespace WindowsNothIsland
             AnimateIsland(280, 74, 18);
         }
 
+        private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (ClockView.Visibility == Visibility.Visible)
+                return;
+
+            if (e.Delta > 0)
+                await _mediaService.NextSessionAsync();      // scroll up = next media
+            else
+                await _mediaService.PreviousSessionAsync();  // scroll down = previous media
+
+            await UpdateMediaInfo();
+        }
+
         private void AnimateIsland(double newWidth, double newHeight, double bottomRadius)
         {
             var duration = TimeSpan.FromMilliseconds(350);

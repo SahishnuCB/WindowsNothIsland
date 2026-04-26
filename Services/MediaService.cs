@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Media.Control;
@@ -19,25 +20,68 @@ namespace WindowsNothIsland.Services
 
     public class MediaService
     {
-        private GlobalSystemMediaTransportControlsSession? _session;
+        private List<GlobalSystemMediaTransportControlsSession> _sessions = new();
+        private int _selectedIndex = 0;
+
+        private async Task RefreshSessionsAsync()
+        {
+            var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+
+            _sessions = manager.GetSessions()
+                .Where(s =>
+                {
+                    var title = s.TryGetMediaPropertiesAsync().GetAwaiter().GetResult().Title;
+                    return !string.IsNullOrWhiteSpace(title);
+                })
+                .ToList();
+
+            if (_sessions.Count == 0)
+            {
+                _selectedIndex = 0;
+                return;
+            }
+
+            if (_selectedIndex >= _sessions.Count)
+                _selectedIndex = 0;
+        }
 
         private async Task<GlobalSystemMediaTransportControlsSession?> GetBestSessionAsync()
         {
-            var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-            var sessions = manager.GetSessions();
+            await RefreshSessionsAsync();
 
-            var playing = sessions.FirstOrDefault(s =>
+            if (_sessions.Count == 0)
+                return null;
+
+            var playingIndex = _sessions.FindIndex(s =>
                 s.GetPlaybackInfo().PlaybackStatus ==
                 GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing);
 
-            if (playing != null)
-            {
-                _session = playing;
-                return _session;
-            }
+            if (playingIndex != -1 && _selectedIndex == 0)
+                _selectedIndex = playingIndex;
 
-            _session = null;
-            return null;
+            return _sessions[_selectedIndex];
+        }
+
+        public async Task NextSessionAsync()
+        {
+            await RefreshSessionsAsync();
+
+            if (_sessions.Count == 0) return;
+
+            _selectedIndex++;
+            if (_selectedIndex >= _sessions.Count)
+                _selectedIndex = 0;
+        }
+
+        public async Task PreviousSessionAsync()
+        {
+            await RefreshSessionsAsync();
+
+            if (_sessions.Count == 0) return;
+
+            _selectedIndex--;
+            if (_selectedIndex < 0)
+                _selectedIndex = _sessions.Count - 1;
         }
 
         public async Task<MediaInfo> GetCurrentMediaAsync()

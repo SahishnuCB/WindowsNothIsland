@@ -19,7 +19,8 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 MouseEnter="Island_MouseEnter"
-                MouseLeave="Island_MouseLeave">
+                MouseLeave="Island_MouseLeave"
+                MouseWheel="Island_MouseWheel">
 
             <Grid Margin="16,10">
 
