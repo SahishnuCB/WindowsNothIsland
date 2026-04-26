@@ -25,7 +25,7 @@ namespace WindowsNothIsland
                 Top = 0;
             };
 
-            _mediaTimer.Interval = TimeSpan.FromSeconds(1);
+            _mediaTimer.Interval = TimeSpan.FromMilliseconds(800);
             _mediaTimer.Tick += async (_, _) => await UpdateMediaInfo();
             _mediaTimer.Start();
         }
@@ -48,6 +48,7 @@ namespace WindowsNothIsland
             ExpandedTitle.Text = title;
             ExpandedArtist.Text = artist;
 
+            // Album Art
             if (media.Thumbnail != null)
             {
                 using var ms = new MemoryStream(media.Thumbnail);
@@ -62,6 +63,10 @@ namespace WindowsNothIsland
                 ExpandedAlbumArt.Source = image;
             }
 
+            // Play/Pause icon
+            PlayPauseIcon.Text = media.IsPlaying ? "⏸" : "▶";
+
+            // Timeline
             if (media.Duration.TotalSeconds > 0)
             {
                 double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
@@ -79,6 +84,28 @@ namespace WindowsNothIsland
                 Canvas.SetLeft(ProgressDot, 0);
             }
         }
+
+        // ================= CONTROLS =================
+
+        private async void PreviousButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            await _mediaService.PreviousAsync();
+            await UpdateMediaInfo();
+        }
+
+        private async void PlayPauseButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            await _mediaService.TogglePlayPauseAsync();
+            await UpdateMediaInfo();
+        }
+
+        private async void NextButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            await _mediaService.NextAsync();
+            await UpdateMediaInfo();
+        }
+
+        // ================= ANIMATION =================
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
@@ -126,6 +153,8 @@ namespace WindowsNothIsland
         }
     }
 
+    // ================= CORNER RADIUS ANIMATION =================
+
     public class CornerRadiusAnimation : AnimationTimeline
     {
         public CornerRadius? From { get; set; }
@@ -138,9 +167,10 @@ namespace WindowsNothIsland
             return new CornerRadiusAnimation();
         }
 
-        public override object GetCurrentValue(object defaultOriginValue,
-                                                object defaultDestinationValue,
-                                                AnimationClock animationClock)
+        public override object GetCurrentValue(
+            object defaultOriginValue,
+            object defaultDestinationValue,
+            AnimationClock animationClock)
         {
             var from = From ?? (CornerRadius)defaultOriginValue;
             var to = To ?? (CornerRadius)defaultDestinationValue;

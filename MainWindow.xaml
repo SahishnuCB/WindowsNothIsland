@@ -122,21 +122,97 @@
                         </Canvas>
 
                         <!-- CONTROLS -->
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
 
-                            <TextBlock Text="⏮"
-                                        FontSize="20"
-                                        Foreground="White"
-                                        Margin="0,0,15,0"/>
+                            <!-- PREVIOUS -->
+                            <Border Width="36"
+                                    Height="36"
+                                    CornerRadius="18"
+                                    Margin="0,0,12,0"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="PreviousButton_Click">
 
-                            <TextBlock Text="⏯"
-                                        FontSize="22"
-                                        Foreground="White"
-                                        Margin="0,0,15,0"/>
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background"
+                                                Value="#1C1C1E"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver"
+                                                    Value="True">
+                                                <Setter Property="Background"
+                                                        Value="#2C2C2E"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
 
-                            <TextBlock Text="⏭"
-                                        FontSize="20"
-                                        Foreground="White"/>
+                                <TextBlock Text="⏮"
+                                            Foreground="White"
+                                            FontSize="16"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- PLAY / PAUSE -->
+                            <Border Width="48"
+                                    Height="48"
+                                    CornerRadius="24"
+                                    Margin="0,0,12,0"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="PlayPauseButton_Click">
+
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background"
+                                                Value="White"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver"
+                                                    Value="True">
+                                                <Setter Property="Background"
+                                                        Value="#E5E5E5"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <TextBlock x:Name="PlayPauseIcon"
+                                            Text="⏯"
+                                            Foreground="Black"
+                                            FontSize="20"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- NEXT -->
+                            <Border Width="36"
+                                    Height="36"
+                                    CornerRadius="18"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="NextButton_Click">
+
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background"
+                                                Value="#1C1C1E"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver"
+                                                    Value="True">
+                                                <Setter Property="Background"
+                                                        Value="#2C2C2E"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <TextBlock Text="⏭"
+                                            Foreground="White"
+                                            FontSize="16"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                            </Border>
+
                         </StackPanel>
 
                     </StackPanel>

@@ -13,20 +13,30 @@ namespace WindowsNothIsland.Services
         public byte[]? Thumbnail { get; set; }
         public TimeSpan Position { get; set; } = TimeSpan.Zero;
         public TimeSpan Duration { get; set; } = TimeSpan.Zero;
+        public bool IsPlaying { get; set; }
     }
 
     public class MediaService
     {
-        public async Task<MediaInfo> GetCurrentMediaAsync()
+        private GlobalSystemMediaTransportControlsSession? _session;
+
+        private async Task<GlobalSystemMediaTransportControlsSession?> GetSessionAsync()
         {
             var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-            var session = manager.GetCurrentSession();
+            _session = manager.GetCurrentSession();
+            return _session;
+        }
+
+        public async Task<MediaInfo> GetCurrentMediaAsync()
+        {
+            var session = await GetSessionAsync();
 
             if (session == null)
                 return new MediaInfo();
 
             var mediaProperties = await session.TryGetMediaPropertiesAsync();
             var timeline = session.GetTimelineProperties();
+            var playback = session.GetPlaybackInfo();
 
             byte[]? thumbnailBytes = null;
 
@@ -40,8 +50,6 @@ namespace WindowsNothIsland.Services
                 reader.ReadBytes(thumbnailBytes);
             }
 
-            var duration = timeline.EndTime - timeline.StartTime;
-
             return new MediaInfo
             {
                 Title = mediaProperties.Title,
@@ -49,8 +57,36 @@ namespace WindowsNothIsland.Services
                 SourceApp = session.SourceAppUserModelId,
                 Thumbnail = thumbnailBytes,
                 Position = timeline.Position,
-                Duration = duration
+                Duration = timeline.EndTime - timeline.StartTime,
+                IsPlaying = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
             };
+        }
+
+        public async Task TogglePlayPauseAsync()
+        {
+            var session = await GetSessionAsync();
+            if (session == null) return;
+
+            var playback = session.GetPlaybackInfo();
+
+            if (playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+                await session.TryPauseAsync();
+            else
+                await session.TryPlayAsync();
+        }
+
+        public async Task NextAsync()
+        {
+            var session = await GetSessionAsync();
+            if (session != null)
+                await session.TrySkipNextAsync();
+        }
+
+        public async Task PreviousAsync()
+        {
+            var session = await GetSessionAsync();
+            if (session != null)
+                await session.TrySkipPreviousAsync();
         }
     }
 }
