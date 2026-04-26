@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -17,6 +18,10 @@ namespace WindowsNothIsland
 
         private bool _isExpanded = false;
         private bool _isHovering = false;
+        private bool _isDraggingTimeline = false;
+
+        private TimeSpan _currentMediaDuration = TimeSpan.Zero;
+        private Color _currentAlbumTint = Color.FromRgb(15, 15, 16);
 
         public MainWindow()
         {
@@ -26,6 +31,7 @@ namespace WindowsNothIsland
             {
                 Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
                 Top = 0;
+                SetIslandBlack();
             };
 
             _mediaTimer.Interval = TimeSpan.FromMilliseconds(800);
@@ -53,6 +59,7 @@ namespace WindowsNothIsland
             {
                 CollapsedView.Visibility = Visibility.Collapsed;
                 ExpandedView.Visibility = Visibility.Collapsed;
+                SetIslandBlack();
 
                 if (_isHovering)
                 {
@@ -74,15 +81,19 @@ namespace WindowsNothIsland
             ClockView.Visibility = Visibility.Collapsed;
             ClockExpandedView.Visibility = Visibility.Collapsed;
 
-            if (_isExpanded)
+            if (_isHovering)
             {
+                _isExpanded = true;
                 CollapsedView.Visibility = Visibility.Collapsed;
                 ExpandedView.Visibility = Visibility.Visible;
+                SetIslandTint();
             }
             else
             {
+                _isExpanded = false;
                 CollapsedView.Visibility = Visibility.Visible;
                 ExpandedView.Visibility = Visibility.Collapsed;
+                SetIslandBlack();
             }
 
             TitleText.Text = title;
@@ -101,32 +112,104 @@ namespace WindowsNothIsland
 
                 ExpandedAlbumArt.Source = image;
                 AlbumArt.Source = image;
+
+                _currentAlbumTint = GetTintFromImage(image);
+
+                if (_isExpanded)
+                    SetIslandTint();
             }
 
             PlayPauseIcon.Text = media.IsPlaying ? "⏸" : "▶";
 
             if (media.Duration.TotalSeconds > 0)
             {
-                double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
-                ratio = Math.Clamp(ratio, 0, 1);
+                _currentMediaDuration = media.Duration;
 
-                double trackWidth = 320;
-                double progressWidth = trackWidth * ratio;
+                if (!_isDraggingTimeline)
+                {
+                    double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
+                    ratio = Math.Clamp(ratio, 0, 1);
 
-                ProgressBar.Width = progressWidth;
-                Canvas.SetLeft(ProgressDot, progressWidth - 4);
+                    double trackWidth = 320;
+                    double progressWidth = trackWidth * ratio;
 
-                CurrentTimeText.Text = FormatTime(media.Position);
-                DurationText.Text = FormatTime(media.Duration);
+                    ProgressBar.Width = progressWidth;
+                    Canvas.SetLeft(ProgressDot, progressWidth - 4);
+
+                    CurrentTimeText.Text = FormatTime(media.Position);
+                    DurationText.Text = FormatTime(media.Duration);
+                }
             }
             else
             {
+                _currentMediaDuration = TimeSpan.Zero;
+
                 ProgressBar.Width = 0;
                 Canvas.SetLeft(ProgressDot, 0);
 
                 CurrentTimeText.Text = "0:00";
                 DurationText.Text = "0:00";
             }
+        }
+
+        private Color GetTintFromImage(BitmapImage bitmap)
+        {
+            var converted = new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0);
+
+            int width = converted.PixelWidth;
+            int height = converted.PixelHeight;
+            int stride = width * 4;
+            byte[] pixels = new byte[height * stride];
+
+            converted.CopyPixels(pixels, stride, 0);
+
+            long r = 0;
+            long g = 0;
+            long b = 0;
+            int count = 0;
+
+            for (int i = 0; i < pixels.Length; i += 80)
+            {
+                b += pixels[i];
+                g += pixels[i + 1];
+                r += pixels[i + 2];
+                count++;
+            }
+
+            if (count == 0)
+                return Color.FromRgb(15, 15, 16);
+
+            byte avgR = (byte)(r / count);
+            byte avgG = (byte)(g / count);
+            byte avgB = (byte)(b / count);
+
+            return Color.FromRgb(
+                (byte)Math.Clamp(avgR * 0.55, 20, 115),
+                (byte)Math.Clamp(avgG * 0.55, 20, 115),
+                (byte)Math.Clamp(avgB * 0.55, 20, 115)
+            );
+        }
+
+        private void SetIslandBlack()
+        {
+            Island.Background = new SolidColorBrush(Color.FromRgb(15, 15, 16));
+            ExpandedView.Background = new SolidColorBrush(Color.FromRgb(15, 15, 16));
+        }
+
+        private void SetIslandTint()
+        {
+            var brush = new SolidColorBrush((Color)Island.Background.GetValue(SolidColorBrush.ColorProperty));
+
+            var anim = new ColorAnimation
+            {
+                To = _currentAlbumTint,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
+            Island.Background = brush;
+            ExpandedView.Background = brush;
         }
 
         private void UpdateClock()
@@ -184,14 +267,64 @@ namespace WindowsNothIsland
             await UpdateMediaInfo();
         }
 
+        private async void Timeline_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_currentMediaDuration.TotalSeconds <= 0)
+                return;
+
+            _isDraggingTimeline = true;
+            TimelineCanvas.CaptureMouse();
+
+            await SeekTimelineFromMouse(e);
+        }
+
+        private async void Timeline_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isDraggingTimeline)
+                return;
+
+            await SeekTimelineFromMouse(e);
+        }
+
+        private async void Timeline_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!_isDraggingTimeline)
+                return;
+
+            _isDraggingTimeline = false;
+            TimelineCanvas.ReleaseMouseCapture();
+
+            await SeekTimelineFromMouse(e);
+        }
+
+        private async Task SeekTimelineFromMouse(System.Windows.Input.MouseEventArgs e)
+        {
+            double x = e.GetPosition(TimelineCanvas).X;
+            double trackWidth = TimelineCanvas.Width;
+
+            double ratio = Math.Clamp(x / trackWidth, 0, 1);
+            double newSeconds = _currentMediaDuration.TotalSeconds * ratio;
+
+            var newPosition = TimeSpan.FromSeconds(newSeconds);
+
+            ProgressBar.Width = trackWidth * ratio;
+            Canvas.SetLeft(ProgressDot, ProgressBar.Width - 4);
+            CurrentTimeText.Text = FormatTime(newPosition);
+
+            await _mediaService.SeekAsync(newPosition);
+        }
+
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             _isHovering = true;
 
             if (ClockView.Visibility == Visibility.Visible)
             {
+                SetIslandBlack();
+
                 ClockView.Visibility = Visibility.Collapsed;
                 ClockExpandedView.Visibility = Visibility.Visible;
+
                 AnimateIsland(650, 220, 18);
                 return;
             }
@@ -201,6 +334,7 @@ namespace WindowsNothIsland
             CollapsedView.Visibility = Visibility.Collapsed;
             ExpandedView.Visibility = Visibility.Visible;
 
+            SetIslandTint();
             AnimateIsland(650, 220, 18);
         }
 
@@ -210,8 +344,11 @@ namespace WindowsNothIsland
 
             if (ClockExpandedView.Visibility == Visibility.Visible)
             {
+                SetIslandBlack();
+
                 ClockView.Visibility = Visibility.Visible;
                 ClockExpandedView.Visibility = Visibility.Collapsed;
+
                 AnimateIsland(280, 74, 18);
                 return;
             }
@@ -221,6 +358,7 @@ namespace WindowsNothIsland
             CollapsedView.Visibility = Visibility.Visible;
             ExpandedView.Visibility = Visibility.Collapsed;
 
+            SetIslandBlack();
             AnimateIsland(280, 74, 18);
         }
 

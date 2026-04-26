@@ -22,8 +22,6 @@ namespace WindowsNothIsland.Services
     {
         private List<GlobalSystemMediaTransportControlsSession> _sessions = new();
 
-        // 0 = Clock
-        // 1..n = media sessions
         private int _selectedIndex = 0;
         private bool _manualSelection = false;
 
@@ -45,7 +43,7 @@ namespace WindowsNothIsland.Services
                 }
                 catch
                 {
-                    // Ignore broken / stale sessions
+                    // Ignore stale/broken sessions
                 }
             }
 
@@ -64,15 +62,12 @@ namespace WindowsNothIsland.Services
             if (_sessions.Count == 0)
                 return null;
 
-            // Manual clock selected
             if (_manualSelection && _selectedIndex == 0)
                 return null;
 
-            // Manual media selected
             if (_manualSelection && _selectedIndex > 0)
                 return _sessions[_selectedIndex - 1];
 
-            // Auto mode: prefer actively playing media
             var playing = _sessions.FirstOrDefault(s =>
                 s.GetPlaybackInfo().PlaybackStatus ==
                 GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing);
@@ -84,7 +79,7 @@ namespace WindowsNothIsland.Services
         {
             await RefreshSessionsAsync();
 
-            int totalItems = _sessions.Count + 1; // +1 for clock
+            int totalItems = _sessions.Count + 1;
 
             if (totalItems <= 1)
             {
@@ -104,7 +99,7 @@ namespace WindowsNothIsland.Services
         {
             await RefreshSessionsAsync();
 
-            int totalItems = _sessions.Count + 1; // +1 for clock
+            int totalItems = _sessions.Count + 1;
 
             if (totalItems <= 1)
             {
@@ -188,6 +183,14 @@ namespace WindowsNothIsland.Services
 
             if (session != null)
                 await session.TrySkipPreviousAsync();
+        }
+
+        public async Task SeekAsync(TimeSpan position)
+        {
+            var session = await GetSelectedSessionAsync();
+
+            if (session != null)
+                await session.TryChangePlaybackPositionAsync(position.Ticks);
         }
     }
 }

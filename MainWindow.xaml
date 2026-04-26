@@ -22,10 +22,12 @@
                 MouseLeave="Island_MouseLeave"
                 MouseWheel="Island_MouseWheel">
 
-            <Grid Margin="16,10">
+            <Grid>
 
                 <!-- MEDIA COLLAPSED -->
-                <Grid x:Name="CollapsedView">
+                <Grid x:Name="CollapsedView"
+                        Margin="16,10">
+
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
@@ -49,6 +51,7 @@
                 <!-- CLOCK COLLAPSED -->
                 <StackPanel x:Name="ClockView"
                             Visibility="Collapsed"
+                            Margin="16,10"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
 
@@ -77,6 +80,7 @@
                     <Canvas Width="130"
                             Height="130"
                             Margin="0,0,55,0">
+
                         <Ellipse Width="130"
                                     Height="130"
                                     Stroke="#2C2C2E"
@@ -151,163 +155,186 @@
                 </StackPanel>
 
                 <!-- MEDIA EXPANDED -->
-                <StackPanel x:Name="ExpandedView"
-                            Visibility="Collapsed"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                            Margin="10">
+                <Border x:Name="ExpandedView"
+                        Visibility="Collapsed"
+                        CornerRadius="0,0,18,18"
+                        Background="#0F0F10">
 
-                    <Image x:Name="ExpandedAlbumArt"
-                            Width="120"
-                            Height="120"
-                            Stretch="UniformToFill"
-                            VerticalAlignment="Center"
-                            Margin="0,0,60,0"/>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Margin="26,0">
 
-                    <StackPanel Width="320"
-                                VerticalAlignment="Center">
+                        <Image x:Name="ExpandedAlbumArt"
+                                Width="120"
+                                Height="120"
+                                Stretch="UniformToFill"
+                                VerticalAlignment="Center"
+                                Margin="0,0,60,0">
 
-                        <TextBlock x:Name="ExpandedTitle"
-                                    Text="Song Name"
-                                    Foreground="White"
-                                    FontSize="18"
-                                    FontWeight="SemiBold"
-                                    TextTrimming="CharacterEllipsis"/>
+                            <Image.Clip>
+                                <RectangleGeometry Rect="0,0,120,120"
+                                                    RadiusX="12"
+                                                    RadiusY="12"/>
+                            </Image.Clip>
 
-                        <TextBlock x:Name="ExpandedArtist"
-                                    Text="Artist"
-                                    Foreground="#A0A0A0"
-                                    FontSize="13"
-                                    Margin="0,2,0,12"/>
+                        </Image>
 
-                        <StackPanel Margin="0,0,0,12">
-                            <Canvas Width="320"
-                                    Height="10">
-                                <Border Width="320"
-                                        Height="3"
-                                        Background="#2C2C2E"
-                                        CornerRadius="2"
-                                        Canvas.Top="3"/>
-
-                                <Border x:Name="ProgressBar"
-                                        Width="0"
-                                        Height="3"
-                                        Background="White"
-                                        CornerRadius="2"
-                                        Canvas.Top="3"/>
-
-                                <Ellipse x:Name="ProgressDot"
-                                            Width="8"
-                                            Height="8"
-                                            Fill="White"
-                                            Canvas.Left="0"
-                                            Canvas.Top="0"/>
-                            </Canvas>
-
-                            <Grid Width="320"
-                                    Margin="0,4,0,0">
-                                <TextBlock x:Name="CurrentTimeText"
-                                            Text="0:00"
-                                            Foreground="#8E8E93"
-                                            FontSize="10"
-                                            HorizontalAlignment="Left"/>
-
-                                <TextBlock x:Name="DurationText"
-                                            Text="0:00"
-                                            Foreground="#8E8E93"
-                                            FontSize="10"
-                                            HorizontalAlignment="Right"/>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
+                        <StackPanel Width="320"
                                     VerticalAlignment="Center">
 
-                            <Border Width="36"
-                                    Height="36"
-                                    CornerRadius="18"
-                                    Margin="0,0,12,0"
-                                    Cursor="Hand"
-                                    MouseLeftButtonDown="PreviousButton_Click">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background"
-                                                Value="#1C1C1E"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver"
-                                                    Value="True">
-                                                <Setter Property="Background"
-                                                        Value="#2C2C2E"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <TextBlock x:Name="ExpandedTitle"
+                                        Text="Song Name"
+                                        Foreground="White"
+                                        FontSize="18"
+                                        FontWeight="SemiBold"
+                                        TextTrimming="CharacterEllipsis"/>
 
-                                <TextBlock Text="⏮"
-                                            Foreground="White"
-                                            FontSize="16"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"/>
-                            </Border>
+                            <TextBlock x:Name="ExpandedArtist"
+                                        Text="Artist"
+                                        Foreground="#D0D0D0"
+                                        FontSize="13"
+                                        Margin="0,2,0,12"/>
 
-                            <Border Width="48"
-                                    Height="48"
-                                    CornerRadius="24"
-                                    Margin="0,0,12,0"
-                                    Cursor="Hand"
-                                    MouseLeftButtonDown="PlayPauseButton_Click">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background"
-                                                Value="White"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver"
-                                                    Value="True">
-                                                <Setter Property="Background"
-                                                        Value="#E5E5E5"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <StackPanel Margin="0,0,0,12">
+                                <Canvas x:Name="TimelineCanvas"
+                                        Width="320"
+                                        Height="10"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="Timeline_MouseLeftButtonDown"
+                                        MouseMove="Timeline_MouseMove"
+                                        MouseLeftButtonUp="Timeline_MouseLeftButtonUp">
 
-                                <TextBlock x:Name="PlayPauseIcon"
-                                            Text="⏯"
-                                            Foreground="Black"
-                                            FontSize="20"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"/>
-                            </Border>
+                                    <Border Width="320"
+                                            Height="3"
+                                            Background="#2C2C2E"
+                                            CornerRadius="2"
+                                            Canvas.Top="3"/>
 
-                            <Border Width="36"
-                                    Height="36"
-                                    CornerRadius="18"
-                                    Cursor="Hand"
-                                    MouseLeftButtonDown="NextButton_Click">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background"
-                                                Value="#1C1C1E"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver"
-                                                    Value="True">
-                                                <Setter Property="Background"
-                                                        Value="#2C2C2E"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                                    <Border x:Name="ProgressBar"
+                                            Width="0"
+                                            Height="3"
+                                            Background="White"
+                                            CornerRadius="2"
+                                            Canvas.Top="3"/>
 
-                                <TextBlock Text="⏭"
-                                            Foreground="White"
-                                            FontSize="16"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"/>
-                            </Border>
+                                    <Ellipse x:Name="ProgressDot"
+                                                Width="8"
+                                                Height="8"
+                                                Fill="White"
+                                                Canvas.Left="0"
+                                                Canvas.Top="0"/>
+                                </Canvas>
+
+                                <Grid Width="320"
+                                        Margin="0,4,0,0">
+
+                                    <TextBlock x:Name="CurrentTimeText"
+                                                Text="0:00"
+                                                Foreground="#D0D0D0"
+                                                FontSize="10"
+                                                HorizontalAlignment="Left"/>
+
+                                    <TextBlock x:Name="DurationText"
+                                                Text="0:00"
+                                                Foreground="#D0D0D0"
+                                                FontSize="10"
+                                                HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Play/Pause Button -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+
+                                <Border Width="36"
+                                        Height="36"
+                                        CornerRadius="18"
+                                        Margin="0,0,12,0"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="PreviousButton_Click">
+
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background"
+                                                    Value="#1C1C1E"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="#2C2C2E"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <TextBlock Text="⏮"
+                                                Foreground="White"
+                                                FontSize="16"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                                </Border>
+
+                                <Border Width="48"
+                                        Height="48"
+                                        CornerRadius="24"
+                                        Margin="0,0,12,0"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="PlayPauseButton_Click">
+
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background"
+                                                    Value="White"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="#E5E5E5"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <TextBlock x:Name="PlayPauseIcon"
+                                                Text="⏯"
+                                                Foreground="Black"
+                                                FontSize="20"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                                </Border>
+
+                                <Border Width="36"
+                                        Height="36"
+                                        CornerRadius="18"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="NextButton_Click">
+
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background"
+                                                    Value="#1C1C1E"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="#2C2C2E"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <TextBlock Text="⏭"
+                                                Foreground="White"
+                                                FontSize="16"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Border>
 
             </Grid>
         </Border>
