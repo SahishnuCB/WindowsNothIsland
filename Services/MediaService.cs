@@ -26,18 +26,16 @@ namespace WindowsNothIsland.Services
             var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
             var sessions = manager.GetSessions();
 
-            // Prefer actively playing media over paused media
-            var playingSession = sessions.FirstOrDefault(session =>
-                session.GetPlaybackInfo().PlaybackStatus ==
+            var playing = sessions.FirstOrDefault(s =>
+                s.GetPlaybackInfo().PlaybackStatus ==
                 GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing);
 
-            if (playingSession != null)
+            if (playing != null)
             {
-                _session = playingSession;
+                _session = playing;
                 return _session;
             }
 
-            // If nothing is playing, return null so clock mode shows
             _session = null;
             return null;
         }
@@ -49,35 +47,37 @@ namespace WindowsNothIsland.Services
             if (session == null)
                 return new MediaInfo();
 
-            var mediaProperties = await session.TryGetMediaPropertiesAsync();
+            var props = await session.TryGetMediaPropertiesAsync();
             var timeline = session.GetTimelineProperties();
             var playback = session.GetPlaybackInfo();
 
-            byte[]? thumbnailBytes = null;
+            byte[]? thumbnail = null;
 
-            if (mediaProperties.Thumbnail != null)
+            if (props.Thumbnail != null)
             {
-                using var stream = await mediaProperties.Thumbnail.OpenReadAsync();
+                using var stream = await props.Thumbnail.OpenReadAsync();
                 using var reader = new DataReader(stream);
                 await reader.LoadAsync((uint)stream.Size);
 
-                thumbnailBytes = new byte[stream.Size];
-                reader.ReadBytes(thumbnailBytes);
+                thumbnail = new byte[stream.Size];
+                reader.ReadBytes(thumbnail);
             }
 
-            var position = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
+            var position = playback.PlaybackStatus ==
+                GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
                 ? timeline.Position + (DateTimeOffset.Now - timeline.LastUpdatedTime)
                 : timeline.Position;
 
             return new MediaInfo
             {
-                Title = mediaProperties.Title,
-                Artist = mediaProperties.Artist,
+                Title = props.Title,
+                Artist = props.Artist,
                 SourceApp = session.SourceAppUserModelId,
-                Thumbnail = thumbnailBytes,
+                Thumbnail = thumbnail,
                 Position = position,
                 Duration = timeline.EndTime - timeline.StartTime,
-                IsPlaying = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
+                IsPlaying = playback.PlaybackStatus ==
+                            GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
             };
         }
 
@@ -86,9 +86,9 @@ namespace WindowsNothIsland.Services
             var session = await GetBestSessionAsync();
             if (session == null) return;
 
-            var playback = session.GetPlaybackInfo();
+            var state = session.GetPlaybackInfo().PlaybackStatus;
 
-            if (playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+            if (state == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
                 await session.TryPauseAsync();
             else
                 await session.TryPlayAsync();
@@ -97,7 +97,6 @@ namespace WindowsNothIsland.Services
         public async Task NextAsync()
         {
             var session = await GetBestSessionAsync();
-
             if (session != null)
                 await session.TrySkipNextAsync();
         }
@@ -105,7 +104,6 @@ namespace WindowsNothIsland.Services
         public async Task PreviousAsync()
         {
             var session = await GetBestSessionAsync();
-
             if (session != null)
                 await session.TrySkipPreviousAsync();
         }
