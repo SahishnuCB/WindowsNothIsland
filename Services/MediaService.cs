@@ -21,55 +21,82 @@ namespace WindowsNothIsland.Services
     public class MediaService
     {
         private List<GlobalSystemMediaTransportControlsSession> _sessions = new();
+
+        // 0 = Clock
+        // 1..n = media sessions
         private int _selectedIndex = 0;
+        private bool _manualSelection = false;
 
         private async Task RefreshSessionsAsync()
         {
             var manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+            var allSessions = manager.GetSessions();
 
-            _sessions = manager.GetSessions()
-                .Where(s =>
-                {
-                    var title = s.TryGetMediaPropertiesAsync().GetAwaiter().GetResult().Title;
-                    return !string.IsNullOrWhiteSpace(title);
-                })
-                .ToList();
+            var validSessions = new List<GlobalSystemMediaTransportControlsSession>();
 
-            if (_sessions.Count == 0)
+            foreach (var session in allSessions)
             {
-                _selectedIndex = 0;
-                return;
+                try
+                {
+                    var props = await session.TryGetMediaPropertiesAsync();
+
+                    if (!string.IsNullOrWhiteSpace(props.Title))
+                        validSessions.Add(session);
+                }
+                catch
+                {
+                    // Ignore broken / stale sessions
+                }
             }
 
-            if (_selectedIndex >= _sessions.Count)
+            _sessions = validSessions;
+
+            int maxIndex = _sessions.Count;
+
+            if (_selectedIndex > maxIndex)
                 _selectedIndex = 0;
         }
 
-        private async Task<GlobalSystemMediaTransportControlsSession?> GetBestSessionAsync()
+        private async Task<GlobalSystemMediaTransportControlsSession?> GetSelectedSessionAsync()
         {
             await RefreshSessionsAsync();
 
             if (_sessions.Count == 0)
                 return null;
 
-            var playingIndex = _sessions.FindIndex(s =>
+            // Manual clock selected
+            if (_manualSelection && _selectedIndex == 0)
+                return null;
+
+            // Manual media selected
+            if (_manualSelection && _selectedIndex > 0)
+                return _sessions[_selectedIndex - 1];
+
+            // Auto mode: prefer actively playing media
+            var playing = _sessions.FirstOrDefault(s =>
                 s.GetPlaybackInfo().PlaybackStatus ==
                 GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing);
 
-            if (playingIndex != -1 && _selectedIndex == 0)
-                _selectedIndex = playingIndex;
-
-            return _sessions[_selectedIndex];
+            return playing;
         }
 
         public async Task NextSessionAsync()
         {
             await RefreshSessionsAsync();
 
-            if (_sessions.Count == 0) return;
+            int totalItems = _sessions.Count + 1; // +1 for clock
 
+            if (totalItems <= 1)
+            {
+                _selectedIndex = 0;
+                _manualSelection = true;
+                return;
+            }
+
+            _manualSelection = true;
             _selectedIndex++;
-            if (_selectedIndex >= _sessions.Count)
+
+            if (_selectedIndex >= totalItems)
                 _selectedIndex = 0;
         }
 
@@ -77,16 +104,25 @@ namespace WindowsNothIsland.Services
         {
             await RefreshSessionsAsync();
 
-            if (_sessions.Count == 0) return;
+            int totalItems = _sessions.Count + 1; // +1 for clock
 
+            if (totalItems <= 1)
+            {
+                _selectedIndex = 0;
+                _manualSelection = true;
+                return;
+            }
+
+            _manualSelection = true;
             _selectedIndex--;
+
             if (_selectedIndex < 0)
-                _selectedIndex = _sessions.Count - 1;
+                _selectedIndex = totalItems - 1;
         }
 
         public async Task<MediaInfo> GetCurrentMediaAsync()
         {
-            var session = await GetBestSessionAsync();
+            var session = await GetSelectedSessionAsync();
 
             if (session == null)
                 return new MediaInfo();
@@ -127,7 +163,7 @@ namespace WindowsNothIsland.Services
 
         public async Task TogglePlayPauseAsync()
         {
-            var session = await GetBestSessionAsync();
+            var session = await GetSelectedSessionAsync();
             if (session == null) return;
 
             var state = session.GetPlaybackInfo().PlaybackStatus;
@@ -140,14 +176,16 @@ namespace WindowsNothIsland.Services
 
         public async Task NextAsync()
         {
-            var session = await GetBestSessionAsync();
+            var session = await GetSelectedSessionAsync();
+
             if (session != null)
                 await session.TrySkipNextAsync();
         }
 
         public async Task PreviousAsync()
         {
-            var session = await GetBestSessionAsync();
+            var session = await GetSelectedSessionAsync();
+
             if (session != null)
                 await session.TrySkipPreviousAsync();
         }

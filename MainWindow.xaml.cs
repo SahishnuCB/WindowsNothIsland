@@ -15,6 +15,7 @@ namespace WindowsNothIsland
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
         private bool _isExpanded = false;
+        private bool _isHovering = false;
 
         public MainWindow()
         {
@@ -52,8 +53,13 @@ namespace WindowsNothIsland
                 ClockView.Visibility = Visibility.Visible;
                 CollapsedView.Visibility = Visibility.Collapsed;
                 ExpandedView.Visibility = Visibility.Collapsed;
-                _isExpanded = false;
-                AnimateIsland(280, 74, 18);
+
+                if (!_isHovering)
+                {
+                    _isExpanded = false;
+                    AnimateIsland(280, 74, 18);
+                }
+
                 return;
             }
 
@@ -148,6 +154,8 @@ namespace WindowsNothIsland
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
+            _isHovering = true;
+
             if (ClockView.Visibility == Visibility.Visible)
                 return;
 
@@ -161,6 +169,8 @@ namespace WindowsNothIsland
 
         private void Island_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
+            _isHovering = false;
+
             if (ClockView.Visibility == Visibility.Visible)
                 return;
 
@@ -174,13 +184,10 @@ namespace WindowsNothIsland
 
         private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
-            if (ClockView.Visibility == Visibility.Visible)
-                return;
-
             if (e.Delta > 0)
-                await _mediaService.NextSessionAsync();      // scroll up = next media
+                await _mediaService.NextSessionAsync();      // scroll up = next source
             else
-                await _mediaService.PreviousSessionAsync();  // scroll down = previous media
+                await _mediaService.PreviousSessionAsync();  // scroll down = previous source
 
             await UpdateMediaInfo();
         }
