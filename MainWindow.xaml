@@ -24,9 +24,8 @@
 
             <Grid Margin="16,10">
 
-                <!-- COLLAPSED -->
+                <!-- MEDIA COLLAPSED -->
                 <Grid x:Name="CollapsedView">
-
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
@@ -45,16 +44,16 @@
                                     VerticalAlignment="Center"
                                     TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
-
                 </Grid>
 
+                <!-- CLOCK COLLAPSED -->
                 <StackPanel x:Name="ClockView"
                             Visibility="Collapsed"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
 
                     <TextBlock x:Name="ClockTimeText"
-                                Text="10:42"
+                                Text="14:32"
                                 Foreground="White"
                                 FontSize="24"
                                 FontWeight="SemiBold"
@@ -68,7 +67,90 @@
                                 Margin="0,-2,0,0"/>
                 </StackPanel>
 
-                <!-- EXPANDED -->
+                <!-- CLOCK EXPANDED -->
+                <StackPanel x:Name="ClockExpandedView"
+                            Visibility="Collapsed"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+
+                    <Canvas Width="130"
+                            Height="130"
+                            Margin="0,0,55,0">
+                        <Ellipse Width="130"
+                                    Height="130"
+                                    Stroke="#2C2C2E"
+                                    StrokeThickness="2"
+                                    Fill="#121214"/>
+
+                        <Line X1="65"
+                                Y1="65"
+                                X2="65"
+                                Y2="34"
+                                Stroke="White"
+                                StrokeThickness="4"
+                                StrokeStartLineCap="Round"
+                                StrokeEndLineCap="Round">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="HourHandRotate"
+                                                    CenterX="65"
+                                                    CenterY="65"/>
+                            </Line.RenderTransform>
+                        </Line>
+
+                        <Line X1="65"
+                                Y1="65"
+                                X2="65"
+                                Y2="20"
+                                Stroke="White"
+                                StrokeThickness="3"
+                                StrokeStartLineCap="Round"
+                                StrokeEndLineCap="Round">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="MinuteHandRotate"
+                                                    CenterX="65"
+                                                    CenterY="65"/>
+                            </Line.RenderTransform>
+                        </Line>
+
+                        <Line X1="65"
+                                Y1="65"
+                                X2="65"
+                                Y2="16"
+                                Stroke="#FF453A"
+                                StrokeThickness="1.5"
+                                StrokeStartLineCap="Round"
+                                StrokeEndLineCap="Round">
+                            <Line.RenderTransform>
+                                <RotateTransform x:Name="SecondHandRotate"
+                                                    CenterX="65"
+                                                    CenterY="65"/>
+                            </Line.RenderTransform>
+                        </Line>
+
+                        <Ellipse Width="7"
+                                    Height="7"
+                                    Fill="White"
+                                    Canvas.Left="61.5"
+                                    Canvas.Top="61.5"/>
+                    </Canvas>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="ClockDayExpandedText"
+                                    Text="Sunday"
+                                    Foreground="White"
+                                    FontSize="24"
+                                    FontWeight="SemiBold"/>
+
+                        <TextBlock x:Name="ClockFullDateExpandedText"
+                                    Text="Apr 26, 2026"
+                                    Foreground="#A0A0A0"
+                                    FontSize="15"
+                                    Margin="0,4,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- MEDIA EXPANDED -->
                 <StackPanel x:Name="ExpandedView"
                             Visibility="Collapsed"
                             Orientation="Horizontal"
@@ -99,7 +181,6 @@
                                     FontSize="13"
                                     Margin="0,2,0,12"/>
 
-                        <!-- TIMELINE -->
                         <StackPanel Margin="0,0,0,12">
                             <Canvas Width="320"
                                     Height="10">
@@ -140,7 +221,6 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- CONTROLS -->
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
@@ -151,7 +231,6 @@
                                     Margin="0,0,12,0"
                                     Cursor="Hand"
                                     MouseLeftButtonDown="PreviousButton_Click">
-
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background"
@@ -179,7 +258,6 @@
                                     Margin="0,0,12,0"
                                     Cursor="Hand"
                                     MouseLeftButtonDown="PlayPauseButton_Click">
-
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background"
@@ -207,7 +285,6 @@
                                     CornerRadius="18"
                                     Cursor="Hand"
                                     MouseLeftButtonDown="NextButton_Click">
-
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background"
@@ -228,7 +305,6 @@
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                             </Border>
-
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

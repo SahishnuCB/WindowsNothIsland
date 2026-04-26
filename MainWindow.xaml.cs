@@ -14,6 +14,7 @@ namespace WindowsNothIsland
     {
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
+
         private bool _isExpanded = false;
         private bool _isHovering = false;
 
@@ -50,12 +51,19 @@ namespace WindowsNothIsland
 
             if (!hasMedia)
             {
-                ClockView.Visibility = Visibility.Visible;
                 CollapsedView.Visibility = Visibility.Collapsed;
                 ExpandedView.Visibility = Visibility.Collapsed;
 
-                if (!_isHovering)
+                if (_isHovering)
                 {
+                    ClockView.Visibility = Visibility.Collapsed;
+                    ClockExpandedView.Visibility = Visibility.Visible;
+                    AnimateIsland(650, 220, 18);
+                }
+                else
+                {
+                    ClockView.Visibility = Visibility.Visible;
+                    ClockExpandedView.Visibility = Visibility.Collapsed;
                     _isExpanded = false;
                     AnimateIsland(280, 74, 18);
                 }
@@ -64,6 +72,7 @@ namespace WindowsNothIsland
             }
 
             ClockView.Visibility = Visibility.Collapsed;
+            ClockExpandedView.Visibility = Visibility.Collapsed;
 
             if (_isExpanded)
             {
@@ -114,6 +123,7 @@ namespace WindowsNothIsland
             {
                 ProgressBar.Width = 0;
                 Canvas.SetLeft(ProgressDot, 0);
+
                 CurrentTimeText.Text = "0:00";
                 DurationText.Text = "0:00";
             }
@@ -122,8 +132,20 @@ namespace WindowsNothIsland
         private void UpdateClock()
         {
             var now = DateTime.Now;
+
             ClockTimeText.Text = now.ToString("HH:mm");
             ClockDateText.Text = now.ToString("ddd, MMM d");
+
+            ClockDayExpandedText.Text = now.ToString("dddd");
+            ClockFullDateExpandedText.Text = now.ToString("MMM d, yyyy");
+
+            double seconds = now.Second;
+            double minutes = now.Minute + seconds / 60.0;
+            double hours = (now.Hour % 12) + minutes / 60.0;
+
+            SecondHandRotate.Angle = seconds * 6;
+            MinuteHandRotate.Angle = minutes * 6;
+            HourHandRotate.Angle = hours * 30;
         }
 
         private string FormatTime(TimeSpan time)
@@ -152,12 +174,27 @@ namespace WindowsNothIsland
             await UpdateMediaInfo();
         }
 
+        private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+                await _mediaService.NextSessionAsync();
+            else
+                await _mediaService.PreviousSessionAsync();
+
+            await UpdateMediaInfo();
+        }
+
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             _isHovering = true;
 
             if (ClockView.Visibility == Visibility.Visible)
+            {
+                ClockView.Visibility = Visibility.Collapsed;
+                ClockExpandedView.Visibility = Visibility.Visible;
+                AnimateIsland(650, 220, 18);
                 return;
+            }
 
             _isExpanded = true;
 
@@ -171,8 +208,13 @@ namespace WindowsNothIsland
         {
             _isHovering = false;
 
-            if (ClockView.Visibility == Visibility.Visible)
+            if (ClockExpandedView.Visibility == Visibility.Visible)
+            {
+                ClockView.Visibility = Visibility.Visible;
+                ClockExpandedView.Visibility = Visibility.Collapsed;
+                AnimateIsland(280, 74, 18);
                 return;
+            }
 
             _isExpanded = false;
 
@@ -180,16 +222,6 @@ namespace WindowsNothIsland
             ExpandedView.Visibility = Visibility.Collapsed;
 
             AnimateIsland(280, 74, 18);
-        }
-
-        private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
-        {
-            if (e.Delta > 0)
-                await _mediaService.NextSessionAsync();      // scroll up = next source
-            else
-                await _mediaService.PreviousSessionAsync();  // scroll down = previous source
-
-            await UpdateMediaInfo();
         }
 
         private void AnimateIsland(double newWidth, double newHeight, double bottomRadius)
@@ -230,7 +262,10 @@ namespace WindowsNothIsland
             return new CornerRadiusAnimation();
         }
 
-        public override object GetCurrentValue(object defaultOriginValue, object defaultDestinationValue, AnimationClock animationClock)
+        public override object GetCurrentValue(
+            object defaultOriginValue,
+            object defaultDestinationValue,
+            AnimationClock animationClock)
         {
             var from = From ?? (CornerRadius)defaultOriginValue;
             var to = To ?? (CornerRadius)defaultDestinationValue;
