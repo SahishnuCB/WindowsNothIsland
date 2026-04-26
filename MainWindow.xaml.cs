@@ -8,6 +8,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using WindowsNothIsland.Services;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 
 namespace WindowsNothIsland
 {
@@ -27,9 +29,27 @@ namespace WindowsNothIsland
         private TimeSpan _currentMediaDuration = TimeSpan.Zero;
         private Color _currentAlbumTint = Color.FromRgb(15, 15, 16);
 
+        [DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        private const int HOTKEY_ID = 9000;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            Loaded += (s, e) =>
+            {
+                var handle = new WindowInteropHelper(this).Handle;
+                HwndSource source = HwndSource.FromHwnd(handle);
+                source.AddHook(HwndHook);
+
+                // Ctrl + Shift + Space
+                RegisterHotKey(handle, HOTKEY_ID, 0x0002 | 0x0004, 0x20);
+            };
 
             Loaded += (_, _) =>
             {
@@ -489,6 +509,39 @@ namespace WindowsNothIsland
 
             SetIslandBlack();
             AnimateIsland(280, 74, 18);
+        }
+
+        private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_HOTKEY = 0x0312;
+
+            if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
+            {
+                ToggleIsland();
+                handled = true;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private void ToggleIsland()
+        {
+            if (this.Visibility == Visibility.Visible)
+            {
+                this.Hide();
+            }
+            else
+            {
+                this.Show();
+                this.Activate();
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            var handle = new WindowInteropHelper(this).Handle;
+            UnregisterHotKey(handle, HOTKEY_ID);
+            base.OnClosed(e);
         }
 
         private void AnimateIsland(double newWidth, double newHeight, double bottomRadius)
