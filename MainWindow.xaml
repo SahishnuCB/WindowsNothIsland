@@ -70,12 +70,13 @@
                             HorizontalAlignment="Center"
                             Margin="10">
 
-                    <!-- LEFT: BIG ALBUM ART -->
+                    <!-- LEFT -->
                     <Image x:Name="ExpandedAlbumArt"
                             Width="120"
                             Height="120"
                             Stretch="UniformToFill"
-                            Margin="0,0,20,0"/>
+                            VerticalAlignment="Center"
+                            Margin="0,0,60,0"/>
 
                     <!-- RIGHT -->
                     <StackPanel Width="320"
@@ -94,18 +95,28 @@
                                     FontSize="13"
                                     Margin="0,2,0,12"/>
 
-                        <!-- Timeline -->
-                        <Border Height="4"
-                                Background="#2C2C2E"
-                                CornerRadius="2"
-                                Margin="0,0,0,12">
-                            <Border x:Name="ProgressBar"
-                                    Width="80"
-                                    Background="White"
-                                    CornerRadius="2"/>
-                        </Border>
+                        <!-- TIMELINE -->
+                        <Grid Margin="0,0,0,12">
 
-                        <!-- Controls -->
+                            <Border Height="3"
+                                    Background="#2C2C2E"
+                                    CornerRadius="2"/>
+
+                            <Border x:Name="ProgressBar"
+                                    Height="3"
+                                    Width="120"
+                                    Background="White"
+                                    CornerRadius="2"
+                                    HorizontalAlignment="Left"/>
+
+                            <Ellipse Width="8"
+                                        Height="8"
+                                        Fill="White"
+                                        HorizontalAlignment="Left"
+                                        Margin="120,-2,0,0"/>
+                        </Grid>
+
+                        <!-- CONTROLS -->
                         <StackPanel Orientation="Horizontal">
 
                             <TextBlock Text="⏮"

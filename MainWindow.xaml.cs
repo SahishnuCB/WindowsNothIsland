@@ -122,8 +122,8 @@ namespace WindowsNothIsland
         }
 
         public override object GetCurrentValue(object defaultOriginValue,
-                                               object defaultDestinationValue,
-                                               AnimationClock animationClock)
+                                                object defaultDestinationValue,
+                                                AnimationClock animationClock)
         {
             var from = From ?? (CornerRadius)defaultOriginValue;
             var to = To ?? (CornerRadius)defaultDestinationValue;
