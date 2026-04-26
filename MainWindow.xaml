@@ -12,52 +12,54 @@
 
     <Grid>
         <Border x:Name="Island"
-                Background="Black"
-                Width="250"
-                Height="48"
-                CornerRadius="0,0,18,18"
+                Background="#0F0F10"
+                Width="260"
+            Height="58"
+            CornerRadius="0,0,18,18"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
-                Margin="0,0,0,0"
                 MouseEnter="Island_MouseEnter"
                 MouseLeave="Island_MouseLeave">
 
-            <Grid Margin="12,6">
+            <Grid Margin="16,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Rectangle Width="30"
-                            Height="30"
-                            Fill="#333333"
-                            RadiusX="7"
-                            RadiusY="7"
+                <!-- Album Art -->
+                <Rectangle Width="34"
+                            Height="34"
+                            Fill="#2C2C2E"
+                            RadiusX="8"
+                            RadiusY="8"
                             VerticalAlignment="Center"/>
 
+                <!-- Text -->
                 <StackPanel Grid.Column="1"
-                            Margin="10,0"
+                            Margin="12,0"
                             VerticalAlignment="Center">
 
                     <TextBlock x:Name="TitleText"
                                 Text="Nothing playing"
                                 Foreground="White"
-                                FontSize="12"
+                                FontSize="13"
                                 FontWeight="SemiBold"
                                 TextTrimming="CharacterEllipsis"/>
 
                     <TextBlock x:Name="ArtistText"
                                 Text=""
-                                Foreground="#BBBBBB"
-                                FontSize="10"
+                                Foreground="#A0A0A0"
+                                FontSize="11"
                                 TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
 
+                <!-- Play Button -->
                 <TextBlock Grid.Column="2"
                             Text="▶"
-                            Foreground="White"
-                            FontSize="16"
+                            Foreground="#EAEAEA"
+                            FontSize="18"
                             VerticalAlignment="Center"/>
             </Grid>
         </Border>

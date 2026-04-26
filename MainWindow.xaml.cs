@@ -48,7 +48,7 @@ namespace WindowsNothIsland
 
         private void Island_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            AnimateIsland(250, 48, 18);
+            AnimateIsland(260, 58, 18);
         }
 
         private void AnimateIsland(double newWidth, double newHeight, double bottomRadius)
