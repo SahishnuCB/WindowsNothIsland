@@ -13,8 +13,8 @@
     <Grid>
         <Border x:Name="Island"
                 Background="#0F0F10"
-                Width="260"
-                Height="58"
+                Width="280"
+                Height="74"
                 CornerRadius="0,0,18,18"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
@@ -46,6 +46,26 @@
                     </StackPanel>
 
                 </Grid>
+
+                <StackPanel x:Name="ClockView"
+                            Visibility="Collapsed"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+
+                    <TextBlock x:Name="ClockTimeText"
+                                Text="10:42"
+                                Foreground="White"
+                                FontSize="24"
+                                FontWeight="SemiBold"
+                                TextAlignment="Center"/>
+
+                    <TextBlock x:Name="ClockDateText"
+                                Text="Sun, Apr 26"
+                                Foreground="#A0A0A0"
+                                FontSize="11"
+                                TextAlignment="Center"
+                                Margin="0,-2,0,0"/>
+                </StackPanel>
 
                 <!-- EXPANDED -->
                 <StackPanel x:Name="ExpandedView"
