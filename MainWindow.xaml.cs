@@ -43,12 +43,9 @@ namespace WindowsNothIsland
                 : media.Artist;
 
             TitleText.Text = title;
-            ArtistText.Text = artist;
-
             ExpandedTitle.Text = title;
             ExpandedArtist.Text = artist;
 
-            // Album Art
             if (media.Thumbnail != null)
             {
                 using var ms = new MemoryStream(media.Thumbnail);
@@ -59,14 +56,12 @@ namespace WindowsNothIsland
                 image.StreamSource = ms;
                 image.EndInit();
 
-                AlbumArt.Source = image;
                 ExpandedAlbumArt.Source = image;
+                AlbumArt.Source = image;
             }
 
-            // Play/Pause icon
             PlayPauseIcon.Text = media.IsPlaying ? "⏸" : "▶";
 
-            // Timeline
             if (media.Duration.TotalSeconds > 0)
             {
                 double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
@@ -77,15 +72,27 @@ namespace WindowsNothIsland
 
                 ProgressBar.Width = progressWidth;
                 Canvas.SetLeft(ProgressDot, progressWidth - 4);
+
+                CurrentTimeText.Text = FormatTime(media.Position);
+                DurationText.Text = FormatTime(media.Duration);
             }
             else
             {
                 ProgressBar.Width = 0;
                 Canvas.SetLeft(ProgressDot, 0);
+
+                CurrentTimeText.Text = "0:00";
+                DurationText.Text = "0:00";
             }
         }
 
-        // ================= CONTROLS =================
+        private string FormatTime(TimeSpan time)
+        {
+            if (time.TotalHours >= 1)
+                return $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
+
+            return $"{time.Minutes}:{time.Seconds:D2}";
+        }
 
         private async void PreviousButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -104,8 +111,6 @@ namespace WindowsNothIsland
             await _mediaService.NextAsync();
             await UpdateMediaInfo();
         }
-
-        // ================= ANIMATION =================
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
@@ -152,8 +157,6 @@ namespace WindowsNothIsland
             Island.BeginAnimation(Border.CornerRadiusProperty, radiusAnim);
         }
     }
-
-    // ================= CORNER RADIUS ANIMATION =================
 
     public class CornerRadiusAnimation : AnimationTimeline
     {

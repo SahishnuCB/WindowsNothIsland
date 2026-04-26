@@ -56,7 +56,9 @@ namespace WindowsNothIsland.Services
                 Artist = mediaProperties.Artist,
                 SourceApp = session.SourceAppUserModelId,
                 Thumbnail = thumbnailBytes,
-                Position = timeline.Position,
+                Position = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
+                            ? timeline.Position + (DateTimeOffset.Now - timeline.LastUpdatedTime)
+                            : timeline.Position,
                 Duration = timeline.EndTime - timeline.StartTime,
                 IsPlaying = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
             };

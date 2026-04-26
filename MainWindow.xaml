@@ -25,41 +25,26 @@
 
                 <!-- COLLAPSED -->
                 <Grid x:Name="CollapsedView">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
 
-                    <Image x:Name="AlbumArt"
-                            Width="34"
-                            Height="34"
-                            Stretch="UniformToFill"
-                            Margin="0,0,10,0"/>
-
-                    <StackPanel Grid.Column="1"
-                                Margin="0,0,10,0"
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
+
+                        <Image x:Name="AlbumArt"
+                                Width="28"
+                                Height="28"
+                                Stretch="UniformToFill"
+                                Margin="0,0,10,0"/>
 
                         <TextBlock x:Name="TitleText"
                                     Text="Nothing playing"
                                     Foreground="White"
-                                    FontSize="13"
+                                    FontSize="14"
                                     FontWeight="SemiBold"
-                                    TextTrimming="CharacterEllipsis"/>
-
-                        <TextBlock x:Name="ArtistText"
-                                    Text=""
-                                    Foreground="#A0A0A0"
-                                    FontSize="11"
+                                    VerticalAlignment="Center"
                                     TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
 
-                    <TextBlock Grid.Column="2"
-                                Text="▶"
-                                Foreground="#EAEAEA"
-                                FontSize="18"
-                                VerticalAlignment="Center"/>
                 </Grid>
 
                 <!-- EXPANDED -->
@@ -70,7 +55,6 @@
                             HorizontalAlignment="Center"
                             Margin="10">
 
-                    <!-- LEFT -->
                     <Image x:Name="ExpandedAlbumArt"
                             Width="120"
                             Height="120"
@@ -78,7 +62,6 @@
                             VerticalAlignment="Center"
                             Margin="0,0,60,0"/>
 
-                    <!-- RIGHT -->
                     <StackPanel Width="320"
                                 VerticalAlignment="Center">
 
@@ -96,37 +79,51 @@
                                     Margin="0,2,0,12"/>
 
                         <!-- TIMELINE -->
-                        <Canvas Width="320"
-                                Height="10"
-                                Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,0,12">
+                            <Canvas Width="320"
+                                    Height="10">
+                                <Border Width="320"
+                                        Height="3"
+                                        Background="#2C2C2E"
+                                        CornerRadius="2"
+                                        Canvas.Top="3"/>
 
-                            <Border Width="320"
-                                    Height="3"
-                                    Background="#2C2C2E"
-                                    CornerRadius="2"
-                                    Canvas.Top="3"/>
+                                <Border x:Name="ProgressBar"
+                                        Width="0"
+                                        Height="3"
+                                        Background="White"
+                                        CornerRadius="2"
+                                        Canvas.Top="3"/>
 
-                            <Border x:Name="ProgressBar"
-                                    Width="0"
-                                    Height="3"
-                                    Background="White"
-                                    CornerRadius="2"
-                                    Canvas.Top="3"/>
+                                <Ellipse x:Name="ProgressDot"
+                                            Width="8"
+                                            Height="8"
+                                            Fill="White"
+                                            Canvas.Left="0"
+                                            Canvas.Top="0"/>
+                            </Canvas>
 
-                            <Ellipse x:Name="ProgressDot"
-                                        Width="8"
-                                        Height="8"
-                                        Fill="White"
-                                        Canvas.Left="0"
-                                        Canvas.Top="0"/>
-                        </Canvas>
+                            <Grid Width="320"
+                                    Margin="0,4,0,0">
+                                <TextBlock x:Name="CurrentTimeText"
+                                            Text="0:00"
+                                            Foreground="#8E8E93"
+                                            FontSize="10"
+                                            HorizontalAlignment="Left"/>
+
+                                <TextBlock x:Name="DurationText"
+                                            Text="0:00"
+                                            Foreground="#8E8E93"
+                                            FontSize="10"
+                                            HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
 
                         <!-- CONTROLS -->
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
 
-                            <!-- PREVIOUS -->
                             <Border Width="36"
                                     Height="36"
                                     CornerRadius="18"
@@ -155,7 +152,6 @@
                                             VerticalAlignment="Center"/>
                             </Border>
 
-                            <!-- PLAY / PAUSE -->
                             <Border Width="48"
                                     Height="48"
                                     CornerRadius="24"
@@ -185,7 +181,6 @@
                                             VerticalAlignment="Center"/>
                             </Border>
 
-                            <!-- NEXT -->
                             <Border Width="36"
                                     Height="36"
                                     CornerRadius="18"
@@ -214,9 +209,7 @@
                             </Border>
 
                         </StackPanel>
-
                     </StackPanel>
-
                 </StackPanel>
 
             </Grid>
