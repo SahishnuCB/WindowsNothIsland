@@ -14,6 +14,7 @@ namespace WindowsNothIsland
     {
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
+        private bool _isExpanded = false;
 
         public MainWindow()
         {
@@ -44,7 +45,6 @@ namespace WindowsNothIsland
 
             bool hasMedia = title != "Nothing playing";
 
-            // ALWAYS update clock
             UpdateClock();
 
             if (!hasMedia)
@@ -52,18 +52,28 @@ namespace WindowsNothIsland
                 ClockView.Visibility = Visibility.Visible;
                 CollapsedView.Visibility = Visibility.Collapsed;
                 ExpandedView.Visibility = Visibility.Collapsed;
+                _isExpanded = false;
+                AnimateIsland(280, 74, 18);
                 return;
             }
 
             ClockView.Visibility = Visibility.Collapsed;
-            CollapsedView.Visibility = Visibility.Visible;
 
-            // TEXT
+            if (_isExpanded)
+            {
+                CollapsedView.Visibility = Visibility.Collapsed;
+                ExpandedView.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                CollapsedView.Visibility = Visibility.Visible;
+                ExpandedView.Visibility = Visibility.Collapsed;
+            }
+
             TitleText.Text = title;
             ExpandedTitle.Text = title;
             ExpandedArtist.Text = artist;
 
-            // ALBUM ART
             if (media.Thumbnail != null)
             {
                 using var ms = new MemoryStream(media.Thumbnail);
@@ -78,10 +88,8 @@ namespace WindowsNothIsland
                 AlbumArt.Source = image;
             }
 
-            // PLAY / PAUSE ICON
             PlayPauseIcon.Text = media.IsPlaying ? "⏸" : "▶";
 
-            // TIMELINE
             if (media.Duration.TotalSeconds > 0)
             {
                 double ratio = media.Position.TotalSeconds / media.Duration.TotalSeconds;
@@ -100,23 +108,17 @@ namespace WindowsNothIsland
             {
                 ProgressBar.Width = 0;
                 Canvas.SetLeft(ProgressDot, 0);
-
                 CurrentTimeText.Text = "0:00";
                 DurationText.Text = "0:00";
             }
         }
 
-        // ================= CLOCK =================
-
         private void UpdateClock()
         {
             var now = DateTime.Now;
-
-            ClockTimeText.Text = now.ToString("h:mm");
+            ClockTimeText.Text = now.ToString("HH:mm");
             ClockDateText.Text = now.ToString("ddd, MMM d");
         }
-
-        // ================= TIME FORMAT =================
 
         private string FormatTime(TimeSpan time)
         {
@@ -125,8 +127,6 @@ namespace WindowsNothIsland
 
             return $"{time.Minutes}:{time.Seconds:D2}";
         }
-
-        // ================= CONTROLS =================
 
         private async void PreviousButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -146,12 +146,12 @@ namespace WindowsNothIsland
             await UpdateMediaInfo();
         }
 
-        // ================= ANIMATION =================
-
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (ClockView.Visibility == Visibility.Visible)
-                return; // don't expand in clock mode
+                return;
+
+            _isExpanded = true;
 
             CollapsedView.Visibility = Visibility.Collapsed;
             ExpandedView.Visibility = Visibility.Visible;
@@ -164,6 +164,8 @@ namespace WindowsNothIsland
             if (ClockView.Visibility == Visibility.Visible)
                 return;
 
+            _isExpanded = false;
+
             CollapsedView.Visibility = Visibility.Visible;
             ExpandedView.Visibility = Visibility.Collapsed;
 
@@ -174,33 +176,27 @@ namespace WindowsNothIsland
         {
             var duration = TimeSpan.FromMilliseconds(350);
 
-            var widthAnim = new DoubleAnimation
+            Island.BeginAnimation(WidthProperty, new DoubleAnimation
             {
                 To = newWidth,
                 Duration = duration,
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
+            });
 
-            var heightAnim = new DoubleAnimation
+            Island.BeginAnimation(HeightProperty, new DoubleAnimation
             {
                 To = newHeight,
                 Duration = duration,
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
+            });
 
-            var radiusAnim = new CornerRadiusAnimation
+            Island.BeginAnimation(Border.CornerRadiusProperty, new CornerRadiusAnimation
             {
                 To = new CornerRadius(0, 0, bottomRadius, bottomRadius),
                 Duration = duration
-            };
-
-            Island.BeginAnimation(WidthProperty, widthAnim);
-            Island.BeginAnimation(HeightProperty, heightAnim);
-            Island.BeginAnimation(Border.CornerRadiusProperty, radiusAnim);
+            });
         }
     }
-
-    // ================= CORNER RADIUS ANIMATION =================
 
     public class CornerRadiusAnimation : AnimationTimeline
     {
@@ -214,10 +210,7 @@ namespace WindowsNothIsland
             return new CornerRadiusAnimation();
         }
 
-        public override object GetCurrentValue(
-            object defaultOriginValue,
-            object defaultDestinationValue,
-            AnimationClock animationClock)
+        public override object GetCurrentValue(object defaultOriginValue, object defaultDestinationValue, AnimationClock animationClock)
         {
             var from = From ?? (CornerRadius)defaultOriginValue;
             var to = To ?? (CornerRadius)defaultDestinationValue;
