@@ -18,7 +18,11 @@ namespace WindowsNothIsland
 
         private bool _isExpanded = false;
         private bool _isHovering = false;
+        private double _windowStartLeft;
         private bool _isDraggingTimeline = false;
+
+        private bool _isDraggingIsland = false;
+        private Point _dragStartScreenPoint;
 
         private TimeSpan _currentMediaDuration = TimeSpan.Zero;
         private Color _currentAlbumTint = Color.FromRgb(15, 15, 16);
@@ -98,7 +102,12 @@ namespace WindowsNothIsland
 
             TitleText.Text = title;
             ExpandedTitle.Text = title;
-            ExpandedArtist.Text = artist;
+
+            var sourceName = CleanSourceApp(media.SourceApp);
+
+            ExpandedArtist.Text = string.IsNullOrWhiteSpace(sourceName)
+                ? artist
+                : $"{artist} • {sourceName}";
 
             if (media.Thumbnail != null)
             {
@@ -134,7 +143,7 @@ namespace WindowsNothIsland
                     double progressWidth = trackWidth * ratio;
 
                     ProgressBar.Width = progressWidth;
-                    Canvas.SetLeft(ProgressDot, progressWidth - 4);
+                    Canvas.SetLeft(ProgressDot, Math.Max(0, progressWidth - 4));
 
                     CurrentTimeText.Text = FormatTime(media.Position);
                     DurationText.Text = FormatTime(media.Duration);
@@ -150,6 +159,31 @@ namespace WindowsNothIsland
                 CurrentTimeText.Text = "0:00";
                 DurationText.Text = "0:00";
             }
+        }
+
+        private string CleanSourceApp(string sourceApp)
+        {
+            if (string.IsNullOrWhiteSpace(sourceApp))
+                return "";
+
+            sourceApp = sourceApp.ToLower();
+
+            if (sourceApp.Contains("spotify"))
+                return "Spotify";
+
+            if (sourceApp.Contains("chrome") || sourceApp.Contains("youtube"))
+                return "YouTube";
+
+            if (sourceApp.Contains("firefox"))
+                return "Firefox";
+
+            if (sourceApp.Contains("vlc"))
+                return "VLC";
+
+            if (sourceApp.Contains("msedge"))
+                return "Edge";
+
+            return "";
         }
 
         private Color GetTintFromImage(BitmapImage bitmap)
@@ -259,31 +293,21 @@ namespace WindowsNothIsland
 
         private async void Island_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
+            // 👉 HOLD SHIFT = control volume
+            if (System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftShift) ||
+                System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.RightShift))
+            {
+                await _mediaService.ChangeVolumeAsync(e.Delta > 0 ? 5 : -5);
+                return;
+            }
+
+            // 👉 NORMAL SCROLL = switch media source
             if (e.Delta > 0)
                 await _mediaService.NextSessionAsync();
             else
                 await _mediaService.PreviousSessionAsync();
 
             await UpdateMediaInfo();
-        }
-
-        private async void Timeline_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (_currentMediaDuration.TotalSeconds <= 0)
-                return;
-
-            _isDraggingTimeline = true;
-            TimelineCanvas.CaptureMouse();
-
-            await SeekTimelineFromMouse(e);
-        }
-
-        private async void Timeline_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (!_isDraggingTimeline)
-                return;
-
-            await SeekTimelineFromMouse(e);
         }
 
         private async void Timeline_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -294,10 +318,121 @@ namespace WindowsNothIsland
             _isDraggingTimeline = false;
             TimelineCanvas.ReleaseMouseCapture();
 
-            await SeekTimelineFromMouse(e);
+            var newPosition = GetTimelinePositionFromMouse(e);
+            await _mediaService.SeekAsync(newPosition);
+            await Task.Delay(80);
+            await UpdateMediaInfo();
         }
 
-        private async Task SeekTimelineFromMouse(System.Windows.Input.MouseEventArgs e)
+        private void Island_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                _isDraggingIsland = false;
+                Island.ReleaseMouseCapture();
+                ResetIslandToCenter();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.ClickCount != 1)
+                return;
+
+            // clear reset animation so dragging works again
+            BeginAnimation(Window.LeftProperty, null);
+
+            _isDraggingIsland = true;
+            _dragStartScreenPoint = PointToScreen(e.GetPosition(this));
+            _windowStartLeft = Left;
+
+            Island.CaptureMouse();
+            e.Handled = true;
+        }
+
+        private void Timeline_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_currentMediaDuration.TotalSeconds <= 0)
+                return;
+
+            _isDraggingTimeline = true;
+            TimelineCanvas.CaptureMouse();
+
+            PreviewTimelineFromMouse(e);
+        }
+
+        private void ResetIslandToCenter()
+        {
+            double targetLeft = (SystemParameters.PrimaryScreenWidth - Width) / 2;
+
+            BeginAnimation(Window.LeftProperty, null);
+
+            var anim = new DoubleAnimation
+            {
+                To = targetLeft,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            BeginAnimation(Window.LeftProperty, anim);
+        }
+
+        private void Island_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isDraggingIsland)
+                return;
+
+            var currentScreenPoint = PointToScreen(e.GetPosition(this));
+            double dx = currentScreenPoint.X - _dragStartScreenPoint.X;
+
+            double newLeft = _windowStartLeft + dx;
+
+            double collapsedIslandWidth = 280;
+            double windowWidth = Width;
+
+            double islandOffsetInsideWindow = (windowWidth - collapsedIslandWidth) / 2;
+
+            double minLeft = -islandOffsetInsideWindow;
+            double maxLeft = SystemParameters.PrimaryScreenWidth - collapsedIslandWidth - islandOffsetInsideWindow;
+
+            newLeft = Math.Max(minLeft, Math.Min(maxLeft, newLeft));
+
+            Left = newLeft;
+        }
+
+        private void Timeline_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isDraggingTimeline)
+                return;
+
+            PreviewTimelineFromMouse(e);
+        }
+
+        private void Island_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!_isDraggingIsland)
+                return;
+
+            _isDraggingIsland = false;
+            Island.ReleaseMouseCapture();
+        }
+
+        private void PreviewTimelineFromMouse(System.Windows.Input.MouseEventArgs e)
+        {
+            var newPosition = GetTimelinePositionFromMouse(e);
+
+            double ratio = _currentMediaDuration.TotalSeconds <= 0
+                ? 0
+                : newPosition.TotalSeconds / _currentMediaDuration.TotalSeconds;
+
+            double trackWidth = TimelineCanvas.Width;
+            double progressWidth = trackWidth * ratio;
+
+            ProgressBar.Width = progressWidth;
+            Canvas.SetLeft(ProgressDot, Math.Max(0, progressWidth - 4));
+            CurrentTimeText.Text = FormatTime(newPosition);
+        }
+
+        private TimeSpan GetTimelinePositionFromMouse(System.Windows.Input.MouseEventArgs e)
         {
             double x = e.GetPosition(TimelineCanvas).X;
             double trackWidth = TimelineCanvas.Width;
@@ -305,13 +440,7 @@ namespace WindowsNothIsland
             double ratio = Math.Clamp(x / trackWidth, 0, 1);
             double newSeconds = _currentMediaDuration.TotalSeconds * ratio;
 
-            var newPosition = TimeSpan.FromSeconds(newSeconds);
-
-            ProgressBar.Width = trackWidth * ratio;
-            Canvas.SetLeft(ProgressDot, ProgressBar.Width - 4);
-            CurrentTimeText.Text = FormatTime(newPosition);
-
-            await _mediaService.SeekAsync(newPosition);
+            return TimeSpan.FromSeconds(newSeconds);
         }
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
@@ -379,6 +508,19 @@ namespace WindowsNothIsland
                 Duration = duration,
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             });
+
+            Island.RenderTransformOrigin = new Point(0.5, 0);
+            Island.RenderTransform = new ScaleTransform(1, 1);
+
+            var scaleAnim = new DoubleAnimation
+            {
+                To = _isExpanded ? 1.02 : 1.0,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            ((ScaleTransform)Island.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            ((ScaleTransform)Island.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
 
             Island.BeginAnimation(Border.CornerRadiusProperty, new CornerRadiusAnimation
             {

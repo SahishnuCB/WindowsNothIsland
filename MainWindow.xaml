@@ -20,7 +20,10 @@
                 VerticalAlignment="Top"
                 MouseEnter="Island_MouseEnter"
                 MouseLeave="Island_MouseLeave"
-                MouseWheel="Island_MouseWheel">
+                MouseWheel="Island_MouseWheel"
+                MouseLeftButtonDown="Island_MouseLeftButtonDown"
+                MouseMove="Island_MouseMove"
+                MouseLeftButtonUp="Island_MouseLeftButtonUp">
 
             <Grid>
 
