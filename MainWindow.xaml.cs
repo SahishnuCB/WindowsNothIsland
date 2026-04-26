@@ -70,8 +70,23 @@ namespace WindowsNothIsland
             _mediaTimer.Start();
         }
 
-        private async Task UpdateMediaInfo()
+        private void Tray_ShowHide(object sender, RoutedEventArgs e)
         {
+            if (this.Visibility == Visibility.Visible)
+                this.Hide();
+            else
+            {
+                this.Show();
+                this.Activate();
+            }
+        }
+
+        private void Tray_Exit(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+        private async Task UpdateMediaInfo()
+        {            
             var media = await _mediaService.GetCurrentMediaAsync();
 
             var title = string.IsNullOrWhiteSpace(media.Title)
@@ -81,6 +96,9 @@ namespace WindowsNothIsland
             var artist = string.IsNullOrWhiteSpace(media.Artist)
                 ? media.SourceApp
                 : media.Artist;
+
+            TrayIcon.ToolTipText = $"{title} - {artist}";
+
 
             bool hasMedia = title != "Nothing playing";
 
@@ -579,7 +597,16 @@ namespace WindowsNothIsland
         {
             var handle = new WindowInteropHelper(this).Handle;
             UnregisterHotKey(handle, HOTKEY_ID);
+
+            TrayIcon.Dispose();
+
             base.OnClosed(e);
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Hide();
         }
 
         private void AnimateIsland(double newWidth, double newHeight, double bottomRadius)

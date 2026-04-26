@@ -11,6 +11,24 @@
         Height="260">
 
     <Grid>
+
+        <tb:TaskbarIcon x:Name="TrayIcon"
+                        xmlns:tb="http://www.hardcodet.net/taskbar"
+                        IconSource="icon.ico"
+                        ToolTipText="Windows Noth Island"
+                        TrayMouseDoubleClick="Tray_ShowHide"
+                        Visibility="Visible">
+
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Show / Hide"
+                                Click="Tray_ShowHide"/>
+                    <MenuItem Header="Exit"
+                                Click="Tray_Exit"/>
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
+
         <Border x:Name="Island"
                 Background="#0F0F10"
                 Width="280"
