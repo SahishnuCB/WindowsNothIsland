@@ -1,12 +1,18 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using WindowsNothIsland.Services;
 
 namespace WindowsNothIsland
 {
     public partial class MainWindow : Window
     {
+        private readonly MediaService _mediaService = new();
+        private readonly DispatcherTimer _mediaTimer = new();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -16,6 +22,23 @@ namespace WindowsNothIsland
                 Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
                 Top = 0;
             };
+
+            _mediaTimer.Interval = TimeSpan.FromSeconds(1);
+            _mediaTimer.Tick += async (_, _) => await UpdateMediaInfo();
+            _mediaTimer.Start();
+        }
+
+        private async Task UpdateMediaInfo()
+        {
+            var media = await _mediaService.GetCurrentMediaAsync();
+
+            TitleText.Text = string.IsNullOrWhiteSpace(media.Title)
+                ? "Nothing playing"
+                : media.Title;
+
+            ArtistText.Text = string.IsNullOrWhiteSpace(media.Artist)
+                ? media.SourceApp
+                : media.Artist;
         }
 
         private void Island_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)

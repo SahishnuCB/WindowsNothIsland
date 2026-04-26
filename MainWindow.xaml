@@ -20,6 +20,46 @@
                 VerticalAlignment="Top"
                 Margin="0,0,0,0"
                 MouseEnter="Island_MouseEnter"
-                MouseLeave="Island_MouseLeave"/>
+                MouseLeave="Island_MouseLeave">
+
+            <Grid Margin="12,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Rectangle Width="30"
+                            Height="30"
+                            Fill="#333333"
+                            RadiusX="7"
+                            RadiusY="7"
+                            VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1"
+                            Margin="10,0"
+                            VerticalAlignment="Center">
+
+                    <TextBlock x:Name="TitleText"
+                                Text="Nothing playing"
+                                Foreground="White"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                TextTrimming="CharacterEllipsis"/>
+
+                    <TextBlock x:Name="ArtistText"
+                                Text=""
+                                Foreground="#BBBBBB"
+                                FontSize="10"
+                                TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+
+                <TextBlock Grid.Column="2"
+                            Text="▶"
+                            Foreground="White"
+                            FontSize="16"
+                            VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
