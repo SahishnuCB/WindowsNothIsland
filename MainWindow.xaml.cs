@@ -19,6 +19,7 @@ namespace WindowsNothIsland
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
         private readonly AudioService _audioService = new();
+        private readonly DispatcherTimer _volumeOverlayTimer = new();
         private bool _wasExpanded = false;
         private bool _isExpanded = false;
         private bool _isHovering = false;
@@ -68,6 +69,13 @@ namespace WindowsNothIsland
             _mediaTimer.Interval = TimeSpan.FromMilliseconds(800);
             _mediaTimer.Tick += async (_, _) => await UpdateMediaInfo();
             _mediaTimer.Start();
+
+            _volumeOverlayTimer.Interval = TimeSpan.FromMilliseconds(900);
+            _volumeOverlayTimer.Tick += (_, _) =>
+            {
+                _volumeOverlayTimer.Stop();
+                FadeOutVolumeOverlay();
+            };
         }
 
         private void Tray_ShowHide(object sender, RoutedEventArgs e)
@@ -360,7 +368,13 @@ namespace WindowsNothIsland
         {
             if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
             {
-                _audioService.ChangeVolume(e.Delta > 0 ? 0.05f : -0.05f);
+                float delta = e.Delta > 0 ? 0.05f : -0.05f;
+
+                _audioService.ChangeVolume(delta);
+
+                int volumePercent = _audioService.GetVolumePercent();
+                ShowVolumeUI(volumePercent);
+
                 return;
             }
 
@@ -370,6 +384,39 @@ namespace WindowsNothIsland
                 await _mediaService.PreviousSessionAsync();
 
             await UpdateMediaInfo();
+        }
+
+        private void ShowVolumeUI(int volumePercent)
+        {
+            VolumeText.Text = $"Volume {volumePercent}%";
+
+            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
+            VolumeOverlay.Visibility = Visibility.Visible;
+            VolumeOverlay.Opacity = 1;
+
+            _volumeOverlayTimer.Stop();
+            _volumeOverlayTimer.Start();
+        }
+
+        private void FadeOutVolumeOverlay()
+        {
+            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
+
+            var fade = new DoubleAnimation
+            {
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(220),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            fade.Completed += (_, _) =>
+            {
+                VolumeOverlay.Visibility = Visibility.Collapsed;
+                VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
+                VolumeOverlay.Opacity = 0;
+            };
+
+            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, fade);
         }
 
         private async void Timeline_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)

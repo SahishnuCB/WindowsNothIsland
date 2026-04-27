@@ -366,5 +366,36 @@
 
             </Grid>
         </Border>
+
+        <Border x:Name="VolumeOverlay"
+                Width="170"
+                Height="34"
+                Background="#E61C1C1E"
+                CornerRadius="17"
+                Opacity="0"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,88,0,0"
+                IsHitTestVisible="False">
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <TextBlock Text="🔊"
+                            Foreground="White"
+                            FontSize="13"
+                            Margin="0,0,8,0"/>
+
+                <TextBlock x:Name="VolumeText"
+                            Text="Volume 50%"
+                            Foreground="White"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
     </Grid>
 </Window>

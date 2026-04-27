@@ -1,3 +1,4 @@
+using System;
 using NAudio.CoreAudioApi;
 
 namespace WindowsNothIsland.Services
@@ -24,6 +25,11 @@ namespace WindowsNothIsland.Services
         public float GetVolume()
         {
             return _device.AudioEndpointVolume.MasterVolumeLevelScalar;
+        }
+
+        public int GetVolumePercent()
+        {
+            return (int)Math.Round(GetVolume() * 100);
         }
     }
 }
