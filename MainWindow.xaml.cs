@@ -11,6 +11,7 @@ using WindowsNothIsland.Services;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Input;
+using System.Windows.Documents;
 
 namespace WindowsNothIsland
 {
@@ -18,16 +19,20 @@ namespace WindowsNothIsland
     {
         private readonly MediaService _mediaService = new();
         private readonly DispatcherTimer _mediaTimer = new();
+        private readonly DispatcherTimer _volumeTimer = new();
         private readonly AudioService _audioService = new();
         private readonly DispatcherTimer _volumeOverlayTimer = new();
         private bool _wasExpanded = false;
         private bool _isExpanded = false;
         private bool _isHovering = false;
+        private bool _currentIsClock = false;
+        private bool _isAnimatingTitle = false;
         private double _windowStartLeft;
         private bool _isDraggingTimeline = false;
-
         private bool _isDraggingIsland = false;
+        private bool _isShowingVolume = false;
         private Point _dragStartScreenPoint;
+        private string _lastTitle = "Nothing playing";
 
         private TimeSpan _currentMediaDuration = TimeSpan.Zero;
         private Color _currentAlbumTint = Color.FromRgb(15, 15, 16);
@@ -70,11 +75,14 @@ namespace WindowsNothIsland
             _mediaTimer.Tick += async (_, _) => await UpdateMediaInfo();
             _mediaTimer.Start();
 
-            _volumeOverlayTimer.Interval = TimeSpan.FromMilliseconds(900);
-            _volumeOverlayTimer.Tick += (_, _) =>
+            _volumeTimer.Interval = TimeSpan.FromMilliseconds(900);
+            _volumeTimer.Tick += (_, _) =>
             {
-                _volumeOverlayTimer.Stop();
-                FadeOutVolumeOverlay();
+                _volumeTimer.Stop();
+
+                _isShowingVolume = false;
+
+                AnimateTitleText(_lastTitle);
             };
         }
 
@@ -101,6 +109,17 @@ namespace WindowsNothIsland
                 ? "Nothing playing"
                 : media.Title;
 
+            _lastTitle = title;
+
+            if (!_isShowingVolume && _isAnimatingTitle)
+            {
+                TitleText.Text = title;
+                ExpandedTitle.Text = title;
+;
+                TitleText.Opacity = 1;
+                ExpandedTitle.Opacity = 1;
+            }
+
             var artist = string.IsNullOrWhiteSpace(media.Artist)
                 ? media.SourceApp
                 : media.Artist;
@@ -109,6 +128,7 @@ namespace WindowsNothIsland
 
 
             bool hasMedia = title != "Nothing playing";
+            _currentIsClock = !hasMedia;
 
             UpdateClock();
 
@@ -153,9 +173,6 @@ namespace WindowsNothIsland
                 ExpandedView.Visibility = Visibility.Collapsed;
                 SetIslandBlack();
             }
-
-            TitleText.Text = title;
-            ExpandedTitle.Text = title;
 
             var sourceName = CleanSourceApp(media.SourceApp);
 
@@ -373,11 +390,10 @@ namespace WindowsNothIsland
                 _audioService.ChangeVolume(delta);
 
                 int volumePercent = _audioService.GetVolumePercent();
-                ShowVolumeUI(volumePercent);
+                ShowVolumeInline(volumePercent);
 
                 return;
             }
-
             if (e.Delta > 0)
                 await _mediaService.NextSessionAsync();
             else
@@ -396,6 +412,57 @@ namespace WindowsNothIsland
 
             _volumeOverlayTimer.Stop();
             _volumeOverlayTimer.Start();
+        }
+
+        private void ShowVolumeInline(int volumePercent)
+        {
+            _isShowingVolume = true;
+            _volumeTimer.Stop();
+
+            AnimateTitleText($"Volume {volumePercent}%");
+
+            _volumeTimer.Start();
+        }
+
+        private void AnimateTitleText(string newText)
+        {
+            _isAnimatingTitle = true;
+
+            AnimateOneTitle(TitleText, newText);
+            AnimateOneTitle(ExpandedTitle, newText);
+        }
+
+        private void AnimateOneTitle(TextBlock textBlock, string newText)
+        {
+            textBlock.BeginAnimation(UIElement.OpacityProperty, null);
+
+            var fadeOut = new DoubleAnimation
+            {
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(90),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            fadeOut.Completed += (_, _) =>
+            {
+                textBlock.Text = newText;
+
+                var fadeIn = new DoubleAnimation
+                {
+                    To = 1,
+                    Duration = TimeSpan.FromMilliseconds(130),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+
+                fadeIn.Completed += (_, _) =>
+                {
+                    _isAnimatingTitle = false;
+                };
+
+                textBlock.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            };
+
+            textBlock.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
         private void FadeOutVolumeOverlay()
@@ -594,20 +661,18 @@ namespace WindowsNothIsland
             _isHovering = false;
             _isExpanded = false;
 
-            // Hide ALL expanded views
             ExpandedView.Visibility = Visibility.Collapsed;
             ClockExpandedView.Visibility = Visibility.Collapsed;
 
-            // Decide what collapsed view to show
-            bool hasMedia = TitleText.Text != "Nothing playing";
-
-            if (hasMedia)
+            if (_currentIsClock)
             {
-                ShowWithFade(CollapsedView);
+                CollapsedView.Visibility = Visibility.Collapsed;
+                ShowWithFade(ClockView);
             }
             else
             {
-                ShowWithFade(ClockView);
+                ClockView.Visibility = Visibility.Collapsed;
+                ShowWithFade(CollapsedView);
             }
 
             SetIslandBlack();
