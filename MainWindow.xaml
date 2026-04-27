@@ -23,6 +23,19 @@
                 <ContextMenu>
                     <MenuItem Header="Show / Hide"
                                 Click="Tray_ShowHide"/>
+
+                    <Separator/>
+
+                    <MenuItem Header="Controls">
+                        <MenuItem Header="Ctrl + Shift + Space  →  Show / Hide"/>
+                        <MenuItem Header="Shift + Scroll  →  Volume"/>
+                        <MenuItem Header="Scroll  →  Switch Media / Clock"/>
+                        <MenuItem Header="Double Click Island  →  Reset Position"/>
+                        <MenuItem Header="Drag Island  →  Move"/>
+                    </MenuItem>
+
+                    <Separator/>
+
                     <MenuItem Header="Exit"
                                 Click="Tray_Exit"/>
                 </ContextMenu>

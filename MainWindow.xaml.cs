@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -31,6 +32,7 @@ namespace WindowsNothIsland
         private bool _isDraggingTimeline = false;
         private bool _isDraggingIsland = false;
         private bool _isShowingVolume = false;
+        private bool _isExiting = false;
         private Point _dragStartScreenPoint;
         private string _lastTitle = "Nothing playing";
 
@@ -43,11 +45,20 @@ namespace WindowsNothIsland
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
         private const int HOTKEY_ID = 9000;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            ShowInTaskbar = false;
 
             CollapsedView.Opacity = 1;
             ExpandedView.Opacity = 0;
@@ -69,6 +80,8 @@ namespace WindowsNothIsland
                 Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
                 Top = 0;
                 SetIslandBlack();
+
+                HideFromAltTab();
             };
 
             _mediaTimer.Interval = TimeSpan.FromMilliseconds(800);
@@ -99,30 +112,40 @@ namespace WindowsNothIsland
 
         private void Tray_Exit(object sender, RoutedEventArgs e)
         {
+            _isExiting = true;
             Application.Current.Shutdown();
         }
+
         private async Task UpdateMediaInfo()
         {            
             var media = await _mediaService.GetCurrentMediaAsync();
 
-            var title = string.IsNullOrWhiteSpace(media.Title)
-                ? "Nothing playing"
-                : media.Title;
+            string title = media.Title;
+
+            if (string.IsNullOrWhiteSpace(title) || title.Equals("Song Name", StringComparison.OrdinalIgnoreCase))
+            {
+                title = CleanSourceApp(media.SourceApp);
+
+                if (string.IsNullOrWhiteSpace(title))
+                    title = "Nothing playing";
+            }
 
             _lastTitle = title;
 
-            if (!_isShowingVolume && _isAnimatingTitle)
+            if (!_isShowingVolume && !_isAnimatingTitle)
             {
                 TitleText.Text = title;
                 ExpandedTitle.Text = title;
-;
+
                 TitleText.Opacity = 1;
                 ExpandedTitle.Opacity = 1;
             }
 
-            var artist = string.IsNullOrWhiteSpace(media.Artist)
-                ? media.SourceApp
-                : media.Artist;
+            string artist = media.Artist;
+            if (string.IsNullOrWhiteSpace(artist) || IsGarbageArtist(artist))
+            {
+                artist = "Youtube";
+            }
 
             TrayIcon.ToolTipText = $"{title} - {artist}";
 
@@ -175,6 +198,9 @@ namespace WindowsNothIsland
             }
 
             var sourceName = CleanSourceApp(media.SourceApp);
+
+            if (IsGarbageArtist(sourceName))
+                sourceName = "";
 
             ExpandedArtist.Text = string.IsNullOrWhiteSpace(sourceName)
                 ? artist
@@ -237,24 +263,56 @@ namespace WindowsNothIsland
             if (string.IsNullOrWhiteSpace(sourceApp))
                 return "";
 
-            sourceApp = sourceApp.ToLower();
+            string s = sourceApp.ToLower();
 
-            if (sourceApp.Contains("spotify"))
+            // 🎵 Music apps
+            if (s.Contains("spotify"))
                 return "Spotify";
 
-            if (sourceApp.Contains("chrome") || sourceApp.Contains("youtube"))
-                return "YouTube";
+            if (s.Contains("applemusic") || s.Contains("itunes"))
+                return "Apple Music";
 
-            if (sourceApp.Contains("firefox"))
-                return "Firefox";
-
-            if (sourceApp.Contains("vlc"))
+            if (s.Contains("vlc"))
                 return "VLC";
 
-            if (sourceApp.Contains("msedge"))
+            if (s.Contains("wmplayer") || s.Contains("windowsmedia"))
+                return "Media Player";
+
+            if (s.Contains("youtube"))
+                return "YouTube";
+
+            if (s.Contains("udemy"))
+                return "Udemy";
+
+            // 🌐 Browsers (grouped smartly)
+            if (s.Contains("chrome"))
+                return "Chrome";
+
+            if (s.Contains("msedge") || s.Contains("edge"))
                 return "Edge";
 
-            return "";
+            if (s.Contains("firefox"))
+                return "Firefox";
+
+            if (s.Contains("brave"))
+                return "Brave";
+
+            if (s.Contains("opera"))
+                return "Opera";
+
+            if (s.Contains("vivaldi"))
+                return "Vivaldi";
+            
+            if (s.Contains("whatsapp"))
+                return "WhatsApp";
+
+            if (s.Contains("discord"))
+                return "Discord";
+
+            if (s.Contains("netflix"))
+                return "Netflix";
+
+            return sourceApp;
         }
 
         private Color GetTintFromImage(BitmapImage bitmap)
@@ -295,6 +353,13 @@ namespace WindowsNothIsland
             );
         }
 
+        private void HideFromAltTab()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+        }
         private void SetIslandBlack()
         {
             Island.Background = new SolidColorBrush(Color.FromRgb(15, 15, 16));
@@ -315,6 +380,24 @@ namespace WindowsNothIsland
             brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
             Island.Background = brush;
             ExpandedView.Background = brush;
+        }
+
+        private bool IsGarbageArtist(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return true;
+
+            text = text.Trim();
+
+            bool looksLikeHexId =
+                text.Length >= 10 &&
+                text.All(c => Uri.IsHexDigit(c));
+
+            bool mostlyDigits =
+                text.Length >= 8 &&
+                text.Count(char.IsDigit) >= text.Length * 0.7;
+
+            return looksLikeHexId || mostlyDigits;
         }
 
         private void FadeTo(UIElement element, double opacity, int durationMs = 180)
@@ -394,25 +477,39 @@ namespace WindowsNothIsland
 
                 return;
             }
+
             if (e.Delta > 0)
                 await _mediaService.NextSessionAsync();
             else
                 await _mediaService.PreviousSessionAsync();
 
             await UpdateMediaInfo();
+
+            if (_isHovering)
+            {
+                if (_currentIsClock)
+                {
+                    CollapsedView.Visibility = Visibility.Collapsed;
+                    ExpandedView.Visibility = Visibility.Collapsed;
+                    ClockView.Visibility = Visibility.Collapsed;
+
+                    ShowWithFade(ClockExpandedView);
+                    SetIslandBlack();
+                }
+                else
+                {
+                    ClockView.Visibility = Visibility.Collapsed;
+                    ClockExpandedView.Visibility = Visibility.Collapsed;
+                    CollapsedView.Visibility = Visibility.Collapsed;
+
+                    ShowWithFade(ExpandedView);
+                    SetIslandTint();
+                }
+
+                AnimateIsland(650, 220, 18);
+            }
         }
 
-        private void ShowVolumeUI(int volumePercent)
-        {
-            VolumeText.Text = $"Volume {volumePercent}%";
-
-            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
-            VolumeOverlay.Visibility = Visibility.Visible;
-            VolumeOverlay.Opacity = 1;
-
-            _volumeOverlayTimer.Stop();
-            _volumeOverlayTimer.Start();
-        }
 
         private void ShowVolumeInline(int volumePercent)
         {
@@ -465,26 +562,6 @@ namespace WindowsNothIsland
             textBlock.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
-        private void FadeOutVolumeOverlay()
-        {
-            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
-
-            var fade = new DoubleAnimation
-            {
-                To = 0,
-                Duration = TimeSpan.FromMilliseconds(220),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            fade.Completed += (_, _) =>
-            {
-                VolumeOverlay.Visibility = Visibility.Collapsed;
-                VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, null);
-                VolumeOverlay.Opacity = 0;
-            };
-
-            VolumeOverlay.BeginAnimation(UIElement.OpacityProperty, fade);
-        }
 
         private async void Timeline_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -717,6 +794,9 @@ namespace WindowsNothIsland
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
+            if (_isExiting)
+                return;
+
             e.Cancel = true;
             this.Hide();
         }
